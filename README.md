@@ -15,7 +15,7 @@ L'app ascolta continuamente il microfono (in italiano) e capisce tre parole:
 
 | Parola detta | Cosa succede |
 |---|---|
-| **"Crucio"** | Il wisp si blocca, strizza gli occhi, trema sempre più forte e diventa rosso, con un lamento. Se nessuno lo ferma, dopo **5 secondi esplode**. Dopo l'esplosione lo schermo resta buio 5 secondi, poi un "fiammifero" lo riaccende. |
+| **"Crucio"** o **"Echo Insania"** | Il wisp si blocca, strizza gli occhi, trema sempre più forte e diventa rosso, con un lamento. Se nessuno lo ferma, dopo **5 secondi esplode**. Dopo l'esplosione lo schermo resta buio 5 secondi, poi un "fiammifero" lo riaccende. |
 | **"Stop"** | Se sta soffrendo (crucio), si calma: torna azzurro in 2 secondi e sbatte gli occhi due volte. Se non sta soffrendo, rallenta e vola calmo per qualche secondo. |
 | **"Ciao"** | Fa gli occhi sorridenti a mezzaluna, ondeggia per 3 secondi e fa un suono allegro. |
 

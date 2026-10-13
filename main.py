@@ -2,7 +2,7 @@
 """
 Pixie Wisp v3.4
 Un fuoco fatuo (wisp) animato che reagisce ai comandi vocali in italiano:
-  - "crucio"  -> il wisp soffre, si arrossa e trema
+  - "crucio" / "Echo Insania" -> il wisp soffre, si arrossa e trema
   - "stop"    -> interrompe la sofferenza e torna normale
   - "ciao"    -> saluta con un sorriso e fa una giravolta
 
@@ -262,11 +262,40 @@ def _best_command_for_word(word):
     return None
 
 
+# Formule a piu' parole che fanno la stessa cosa di un comando
+# ("Echo Insania" = crucio). Confrontate tutte attaccate e semplificate,
+# cosi' reggono "eco insania", "echo in sania", "ecoinsanya"...
+VOICE_PHRASES = {
+    'crucio': ['echoinsania', 'ecoinsania', 'ecinsania', 'eccoinsania', 'ecoinsanja'],
+}
+
+
+def _check_phrases(full):
+    joined = _squash_word(full.replace(' ', ''))
+    if not joined:
+        return None
+    for cmd, phrases in VOICE_PHRASES.items():
+        for ph in phrases:
+            p = _squash_word(ph)
+            n = len(p)
+            # cerca la formula anche dentro una frase piu' lunga
+            for ln in range(max(1, n - 2), n + 3):
+                for i in range(0, max(1, len(joined) - ln + 1)):
+                    if _lev(joined[i:i + ln], p) <= 2:
+                        return cmd
+    return None
+
+
 def _check_text(text):
     # 1) frase intera
     full = _normalize_voice_text(text)
     if not full:
         return None
+
+    # 0) formule a piu' parole (es. "Echo Insania")
+    cmd = _check_phrases(full)
+    if cmd:
+        return cmd
 
     cmd = _best_command_for_word(full)
     if cmd:

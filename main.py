@@ -13,6 +13,7 @@ import sys
 import os
 import random
 import math
+import re
 import traceback
 import tempfile
 import wave
@@ -96,13 +97,7 @@ STATE_EXPLODE = 'explode'
 STATE_DEAD = 'dead'
 STATE_MATCH = 'match'
 STATE_CIAO = 'ciao'
-STATE_SCARED = 'scared'
-STATE_ANGRY = 'angry'
-STATE_CALM = 'calm'
-STATE_FREEZE = 'freeze'
-STATE_MULTIPLY = 'multiply'
-STATE_HIDE = 'hide'
-STATE_SPIN = 'spin'
+STATE_CALM = 'calm'   # dopo "stop" quando non sta soffrendo
 
 # ---------------------------------------------------------------------------
 # Comandi vocali: parola sentita -> comando
@@ -150,7 +145,6 @@ VOICE_COMMANDS = {
     'strop': 'stop',
     'ztop': 'stop',
     'stock': 'stop',
-    'sto': 'stop',
     'stoppo': 'stop',
 
     # ciao
@@ -172,7 +166,7 @@ VOICE_COMMANDS = {
 
 VOICE_TARGETS = {
     'crucio': ['crucio', 'krucio', 'cruzio', 'cruccio', 'crucchio', 'crocio', 'grucio', 'krutio', 'crucioo', 'crutio', 'crucyo', 'trucio', 'crusio', 'cruscio', 'crucial', 'crusho', 'kurucio', 'gruccio', 'cruxio', 'crucco', 'crrrucio', 'crrruccio', 'crrucio', 'crrucchio', 'crrruzio'],
-    'stop': ['stop', 'stopp', 'stoop', 'stob', 'shtop', 'istop', 'estop', 'stap', 'stup', 'sdop', 'strop', 'ztop', 'stock', 'sto', 'stoppo'],
+    'stop': ['stop', 'stopp', 'stoop', 'stob', 'shtop', 'istop', 'estop', 'stap', 'stup', 'sdop', 'strop', 'ztop', 'stock', 'stoppo'],
     'ciao': ['ciao', 'ciau', 'chao', 'tchao', 'cia', 'ciaoo', 'siao', 'ziao', 'ciauu', 'ciaoh', 'ciaone', 'sau', 'chiau', 'yao'],
 }
 
@@ -231,7 +225,44 @@ def _lev(a, b):
     return prev[-1]
 
 
-def _best_command_for_word(word, loose=False):
+# "Forma" che una parola deve avere per poter essere un comando.
+# Serve a evitare che parole qualsiasi vengano scambiate per comandi
+# solo perche' hanno qualche lettera in comune (es. "musica" -> crucio).
+VOICE_SHAPES = {
+    'crucio': re.compile(r'^[ckgt]u?r+[uoi]*[cstzx]'),     # cr/kr/gr/tr + u/o + c/s/z/t
+    'stop': re.compile(r'^[ei]?[sz][tdc]?r?[aou]+[pbkc]'),  # s(t) + vocale + p/b
+    'ciao': re.compile(r'^[csztyg]i?a[ou]?(ne|h)?$'),        # c/s/z + (i) + a + o/u
+}
+
+# Parole italiane vere che hanno la "forma" di un comando ma non lo sono:
+# non devono mai far scattare niente (generata da un elenco di parole italiane comuni)
+NOT_COMMANDS = frozenset([
+    'ca', 'cane', 'cha', 'chris', 'christi', 'christian', 'christie', 'christina',
+    'christine', 'christmas', 'christopher', 'church', 'churchill', 'cricca', 'criceto',
+    'cricket', 'crisi', 'crisis', 'cristalli', 'cristallo', 'cristian', 'cristiana',
+    'cristiane', 'cristiani', 'cristiano', 'cristina', 'cristo', 'criteri', 'criterio',
+    'critica', 'criticano', 'criticare', 'criticata', 'criticate', 'criticato', 'critiche',
+    'critici', 'criticita', 'critico', 'croccante', 'croce', 'crocetta', 'crocevia',
+    'croci', 'crociata', 'crociate', 'crociati', 'crociato', 'crociera', 'crociere',
+    'cross', 'crossover', 'crosta', 'crostacei', 'crostata', 'crotone', 'crozza', 'cruise',
+    'crusca', 'cruscotto', 'curiosa', 'curiose', 'curiosi', 'curiosita', 'curioso',
+    'curtis', 'gia', 'gross', 'grossa', 'grosse', 'grosseto', 'grossi', 'grosso', 'grotta',
+    'grotte', 'grottesco', 'isaac', 'isacco', 'kris', 'kristen', 'kurt', 'sa', 'saba',
+    'sacca', 'sacche', 'sacchi', 'sacco', 'sachs', 'sacro', 'sane', 'sap', 'saper', 'sappi',
+    'sapra', 'sapro', 'scacchi', 'scacco', 'scappa', 'scappi', 'scappo', 'scocca', 'scoop',
+    'scopa', 'scopano', 'scopato', 'scope', 'scopi', 'scopo', 'scoppia', 'scoppio',
+    'scopre', 'scopri', 'scopro', 'scotch', 'shah', 'shane', 'shock', 'shop', 'sia', 'soap',
+    'soccer', 'soci', 'socia', 'socio', 'sopra', 'stabia', 'stacca', 'stacchi', 'stacco',
+    'stack', 'stracci', 'strappa', 'strappi', 'strappo', 'stucchi', 'stucco', 'stupida',
+    'stupide', 'stupidi', 'stupido', 'stupire', 'stupita', 'stupito', 'stupore', 'stupri',
+    'stupro', 'subi', 'succhi', 'succo', 'sup', 'super', 'tao', 'trick', 'tricolore',
+    'tris', 'tristan', 'triste', 'tristi', 'trota', 'truccato', 'trucchi', 'trucco',
+    'trust', 'truth', 'turca', 'turche', 'turchi', 'turchia', 'turco', 'turismo', 'turista',
+    'turisti', 'turistico', 'ya', 'zack', 'zappa', 'zia', 'zoppo', 'zucca', 'zuppa',
+])
+
+
+def _best_command_for_word(word, loose=False, maxdiff=1, strict=False):
     raw = _normalize_voice_text(word)
     if not raw:
         return None
@@ -242,20 +273,32 @@ def _best_command_for_word(word, loose=False):
         return VOICE_COMMANDS[raw]
     if sq in VOICE_COMMANDS:
         return VOICE_COMMANDS[sq]
+    if raw in NOT_COMMANDS or sq in NOT_COMMANDS:
+        return None
 
     best_cmd = None
     best_dist = 999
     for cmd, variants in VOICE_TARGETS.items():
+        if not VOICE_SHAPES[cmd].match(sq):
+            continue
         for variant in variants:
-            d = _lev(sq, _squash_word(variant))
+            v = _squash_word(variant)
+            # lunghezza simile: niente match tra una parola corta e una frase intera
+            if abs(len(v) - len(sq)) > maxdiff:
+                continue
+            d = _lev(sq, v)
             if d < best_dist:
                 best_dist = d
                 best_cmd = cmd
 
+    # pezzi di parole riattaccati ("cru cio"): devono somigliare molto
+    if strict:
+        return best_cmd if best_dist <= (2 if best_cmd == 'crucio' else 1) else None
+
     # soglie di tolleranza per comando
-    if best_cmd == 'stop' and best_dist <= 3:
+    if best_cmd == 'stop' and best_dist <= (1 if len(sq) <= 3 else 3):
         return best_cmd
-    if best_cmd == 'ciao' and best_dist <= 3:
+    if best_cmd == 'ciao' and best_dist <= (1 if len(sq) <= 3 else 3):
         return best_cmd
     # crucio: tolleranza alta (le parole troppo corte restano escluse)
     if best_cmd == 'crucio' and (best_dist <= 4 or (loose and best_dist <= 5 and len(sq) >= 5)):
@@ -272,6 +315,9 @@ VOICE_PHRASES = {
 }
 
 
+_PHRASE_CORE = re.compile(r'[ie]n[sz][ao]')
+
+
 def _check_phrases(full):
     joined = _squash_word(full.replace(' ', ''))
     if not joined:
@@ -280,11 +326,16 @@ def _check_phrases(full):
         for ph in phrases:
             p = _squash_word(ph)
             n = len(p)
-            # cerca la formula anche dentro una frase piu' lunga
-            for ln in range(max(1, n - 2), n + 3):
+            # tolleranza alta per la formula intera, bassa per "insania" da sola
+            # (cosi' "insonnia" non fa scattare niente)
+            tol = 1 if n <= 7 else 3
+            for ln in range(max(1, n - tol), n + tol + 1):
                 for i in range(0, max(1, len(joined) - ln + 1)):
-                    # tolleranza alta: fino a 3 lettere sbagliate (2 per "insania" da sola)
-                    if _lev(joined[i:i + ln], p) <= (2 if n <= 7 else 3):
+                    win = joined[i:i + ln]
+                    # il cuore della formula ("insa"/"inso"/"inza") deve esserci davvero
+                    if not _PHRASE_CORE.search(win):
+                        continue
+                    if _lev(win, p) <= tol:
                         return cmd
     return None
 
@@ -300,27 +351,27 @@ def _check_text(text):
     if cmd:
         return cmd
 
-    cmd = _best_command_for_word(full)
+    cmd = _best_command_for_word(full, strict=' ' in full)
     if cmd:
         return cmd
 
     # 2) parola per parola
     words = full.split()
     for w in words:
-        cmd = _best_command_for_word(w, loose=True)
+        cmd = _best_command_for_word(w, loose=True, maxdiff=3)
         if cmd:
             return cmd
 
     # 3) coppie di parole attaccate ("cru cio" -> "crucio")
     if len(words) >= 2:
         for i in range(len(words) - 1):
-            cmd = _best_command_for_word(words[i] + words[i + 1])
+            cmd = _best_command_for_word(words[i] + words[i + 1], strict=True)
             if cmd:
                 return cmd
 
     # 4) tutto attaccato
     squashed = ''.join(words)
-    cmd = _best_command_for_word(squashed)
+    cmd = _best_command_for_word(squashed, strict=True)
     if cmd:
         return cmd
 
@@ -885,13 +936,9 @@ class Wisp:
         self.particles = []
         self.exp_particles = []
         self.match_particles = []
-        self.clone_wisps = []
         self.eyes = Eyes()
         self.pulse_t = 0.0
         self.match_t = 0.0
-        self.spin_t = 0.0
-        self._spin_cx = self.x
-        self._spin_cy = self.y
         self.turn = 0.0
         self.turn_target = 0.0
         self.turn_timer = random.uniform(1.2, 3.0)
@@ -937,11 +984,7 @@ class Wisp:
         elif self.y > LH - WALL: self.y = LH - WALL; self.vy = -abs(self.vy) * 0.7
 
     def _enter(self, state):
-        if state == STATE_SPIN:
-            self._spin_cx = self.x
-            self._spin_cy = self.y
-            self.spin_t = 0.0
-        elif state == STATE_STOP:
+        if state == STATE_STOP:
             self._enter_stop()
             return
         self.state = state
@@ -959,48 +1002,19 @@ class Wisp:
             if self.state_t >= 5.0: self._enter_match()
         elif self.state == STATE_MATCH: self._upd_match(dt)
         elif self.state == STATE_CIAO: self._upd_ciao(dt)
-        elif self.state == STATE_SCARED: self._upd_scared(dt)
-        elif self.state == STATE_ANGRY: self._upd_angry(dt)
         elif self.state == STATE_CALM: self._upd_calm(dt)
-        elif self.state == STATE_FREEZE: self._upd_freeze(dt)
-        elif self.state == STATE_MULTIPLY: self._upd_multiply(dt)
-        elif self.state == STATE_HIDE: self._upd_hide(dt)
-        elif self.state == STATE_SPIN: self._upd_spin(dt)
 
     def _dispatch(self, cmd):
         if cmd == 'stop':
             if self.state == STATE_CRUCIO:
                 self._enter_stop()
-            else:
+            elif self.state in (STATE_NORMAL, STATE_CALM):
                 self._enter(STATE_CALM)
             return
-        if cmd == 'explode':
-            self._enter_explode()
-            return
-        if cmd == 'freeze':
-            self._enter(STATE_FREEZE)
-            return
-        passive = {STATE_NORMAL, STATE_CALM, STATE_HIDE, STATE_SPIN,
-                   STATE_MULTIPLY, STATE_SCARED, STATE_ANGRY, STATE_FREEZE}
-        if self.state not in passive:
+        if self.state not in (STATE_NORMAL, STATE_CALM):
             return
         if cmd == 'crucio': self._enter_crucio()
         elif cmd == 'ciao': self._enter_ciao()
-        elif cmd == 'scared': self._enter(STATE_SCARED)
-        elif cmd == 'angry': self._enter_angry()
-        elif cmd == 'calm': self._enter(STATE_CALM)
-        elif cmd == 'multiply': self._enter(STATE_MULTIPLY)
-        elif cmd == 'spin': self._enter(STATE_SPIN)
-        elif cmd == 'hide': self._enter(STATE_HIDE)
-        elif cmd == 'come':
-            self.tx = LW / 2 + random.uniform(-100, 100)
-            self.ty = LH / 2 + random.uniform(-80, 80)
-        elif cmd == 'go':
-            edge = random.choice(['l', 'r', 't', 'b'])
-            if edge == 'l': self.tx, self.ty = WALL + 20, random.uniform(WALL, LH - WALL)
-            elif edge == 'r': self.tx, self.ty = LW - WALL - 20, random.uniform(WALL, LH - WALL)
-            elif edge == 't': self.tx, self.ty = random.uniform(WALL, LW - WALL), LH - WALL - 20
-            else: self.tx, self.ty = random.uniform(WALL, LW - WALL), WALL + 20
 
     # --- normale: vola tranquillo da un punto all'altro --------------------
     def _upd_normal(self, dt):
@@ -1139,7 +1153,6 @@ class Wisp:
             self._rebuild_body(0.0)
             self.eyes = Eyes()
             self.new_target()
-            self.clone_wisps.clear()
 
     # --- ciao: sorride e ondeggia per 3 secondi -----------------------------
     def _enter_ciao(self):
@@ -1181,50 +1194,7 @@ class Wisp:
             self.turn = self.pitch = self.roll = 0.0
             self.new_target()
 
-    # --- stati extra (non collegati a comandi vocali in questa versione) ---
-    def _upd_scared(self, dt):
-        t = self.state_t
-        self.vx += random.uniform(-4, 4)
-        self.vy += random.uniform(-4, 4)
-        self.x += self.vx
-        self.y += self.vy
-        self._bounce()
-        self.vx *= 0.9
-        self.vy *= 0.9
-        shake = 4.0 * max(0, 1 - t / 3.0)
-        self.x = clamp(self.x + random.uniform(-shake, shake), WALL, LW - WALL)
-        self.y = clamp(self.y + random.uniform(-shake, shake), WALL, LH - WALL)
-        if len(self.particles) < MAX_P:
-            self.particles.append(Particle(self.x, self.y, self.vx, self.vy))
-        self.particles = [p for p in self.particles if p.update(dt)]
-        self.eyes.update(dt)
-        self.pulse_t += dt
-        if t >= 4.0:
-            self._enter(STATE_NORMAL)
-            self.new_target()
-
-    def _enter_angry(self):
-        self.state = STATE_ANGRY
-        self.state_t = 0.0
-        self.eyes.squint()
-
-    def _upd_angry(self, dt):
-        t = self.state_t
-        self.color_tint = clamp(t / 2.0, 0, 1)
-        self._rebuild_body(self.color_tint)
-        self.x = clamp(self.x + random.uniform(-6, 6), WALL, LW - WALL)
-        self.y = clamp(self.y + random.uniform(-2.5, 2.5), WALL, LH - WALL)
-        if len(self.particles) < MAX_P:
-            for _ in range(2):
-                self.particles.append(Particle(self.x, self.y, 0, 0, self.color_tint))
-        self.particles = [p for p in self.particles if p.update(dt)]
-        self.pulse_t += dt
-        if t >= 3.5:
-            self.color_tint = 0.0
-            self._rebuild_body(0.0)
-            self._enter(STATE_NORMAL)
-            self.new_target()
-
+    # --- calmo: dopo "stop" (se non stava soffrendo) vola piano per 6 s ---
     def _upd_calm(self, dt):
         dx = self.tx - self.x
         dy = self.ty - self.y
@@ -1248,76 +1218,6 @@ class Wisp:
         self._rebuild_body(0.0)
         if self.state_t >= 6.0:
             self._enter(STATE_NORMAL)
-
-    def _upd_freeze(self, dt):
-        t = self.state_t
-        shake = 0.4 * math.sin(t * 22)
-        self.x = clamp(self.x + shake, WALL, LW - WALL)
-        self.pulse_t += dt * 0.3
-        if len(self.particles) < 5:
-            self.particles.append(Particle(self.x, self.y, 0, 0, 0.0))
-        self.particles = [p for p in self.particles if p.update(dt)]
-        if t >= 5.0:
-            self._enter(STATE_NORMAL)
-            self.new_target()
-
-    def _upd_multiply(self, dt):
-        t = self.state_t
-        dx = self.tx - self.x
-        dy = self.ty - self.y
-        dist = math.hypot(dx, dy)
-        ax = dx / dist * 40 if dist > 10 else 0
-        ay = dy / dist * 40 if dist > 10 else 0
-        self.vx = self.vx * 0.975 + ax * dt + random.uniform(-0.03, 0.03)
-        self.vy = self.vy * 0.975 + ay * dt + random.uniform(-0.03, 0.03)
-        self.x += self.vx
-        self.y += self.vy
-        self._bounce()
-        self.timer -= dt
-        if self.timer <= 0 or dist < 30:
-            self.new_target()
-        self.clone_wisps = []
-        radius = INNER_R * 2.5
-        for i in range(3):
-            angle = t * 1.5 + i * (math.tau / 3)
-            cx = clamp(self.x + math.cos(angle) * radius, WALL, LW - WALL)
-            cy = clamp(self.y + math.sin(angle) * radius * 0.5, WALL, LH - WALL)
-            self.clone_wisps.append((cx, cy, 0.35))
-        if len(self.particles) < MAX_P:
-            for _ in range(random.randint(1, 2)):
-                self.particles.append(Particle(self.x, self.y, self.vx, self.vy))
-        self.particles = [p for p in self.particles if p.update(dt)]
-        self.pulse_t += dt
-        if t >= 8.0:
-            self.clone_wisps.clear()
-            self._enter(STATE_NORMAL)
-
-    def _upd_hide(self, dt):
-        t = self.state_t
-        if t < 1.5: self.alpha_override = max(0.0, 1.0 - t / 1.5)
-        elif t < 3.5: self.alpha_override = 0.0
-        else: self.alpha_override = min(1.0, (t - 3.5) / 1.5)
-        self.pulse_t += dt
-        if t >= 5.0:
-            self.alpha_override = 1.0
-            self._enter(STATE_NORMAL)
-            self.new_target()
-
-    def _upd_spin(self, dt):
-        t = self.state_t
-        self.spin_t += dt * 6.0
-        radius = INNER_R * 1.8 * max(0.0, 1.0 - t / 4.0)
-        self.x = clamp(self._spin_cx + math.cos(self.spin_t) * radius, WALL, LW - WALL)
-        self.y = clamp(self._spin_cy + math.sin(self.spin_t) * radius * 0.5, WALL, LH - WALL)
-        if len(self.particles) < MAX_P:
-            self.particles.append(Particle(self.x, self.y, 0, 0, 0.0))
-        self.particles = [p for p in self.particles if p.update(dt)]
-        self.pulse_t += dt
-        if t >= 4.0:
-            self.x = self._spin_cx
-            self.y = self._spin_cy
-            self._enter(STATE_NORMAL)
-            self.new_target()
 
 
 # ---------------------------------------------------------------------------
@@ -1426,9 +1326,6 @@ class WispCanvas(Widget):
                     self._draw_wisp_at(w, w.x, w.y, fade, 0.0, False)
                 return
 
-            for cx, cy, ca in w.clone_wisps:
-                self._draw_wisp_at(w, cx, cy, ca, 0.0, False)
-
             for p in w.particles:
                 for d in p.get_draw_data():
                     self._ellipse(*d)
@@ -1438,8 +1335,6 @@ class WispCanvas(Widget):
                 squint = clamp(w.state_t / 2.0, 0, 1)
             elif w.state == STATE_STOP:
                 squint = max(0.0, w._stop_tint_start * (1.0 - w.state_t / 2.0) * 0.95)
-            elif w.state == STATE_ANGRY:
-                squint = clamp(w.state_t / 1.0, 0, 0.7)
 
             self._draw_wisp_at(w, w.x, w.y, w.alpha_override, squint, w.state == STATE_CIAO)
 
@@ -1450,10 +1345,8 @@ class WispCanvas(Widget):
         raw = math.sin(w.pulse_t * 0.7)
         smooth = raw * abs(raw)
         pulse = 1.0 + 0.022 * smooth
-        if w.state in (STATE_CRUCIO, STATE_ANGRY):
+        if w.state == STATE_CRUCIO:
             pulse += math.sin(w.state_t * 60) * 0.06
-        elif w.state == STATE_FREEZE:
-            pulse = 1.0 + 0.005 * smooth
         depth_mul = getattr(w, 'depth_scale', 1.0)
         stretch_x = (1.0 + abs(w.turn) * 0.28) * depth_mul
         stretch_y = (1.0 + abs(w.pitch) * 0.12) * depth_mul

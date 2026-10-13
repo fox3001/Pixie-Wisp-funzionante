@@ -19,15 +19,8 @@ L'app ascolta continuamente il microfono (in italiano) e capisce tre parole:
 | **"Stop"** | Se sta soffrendo (crucio), si calma: torna azzurro in 2 secondi e sbatte gli occhi due volte. Se non sta soffrendo, rallenta e vola calmo per qualche secondo. |
 | **"Ciao"** | Fa gli occhi sorridenti a mezzaluna, ondeggia per 3 secondi e fa un suono allegro. |
 
-Il riconoscimento è "tollerante": capisce anche varianti tipo *cruccio, krucio, stopp, ciau, ciaone*… (vedi `VOICE_COMMANDS` in `main.py`).
-
-### Stati già pronti ma non ancora collegati alla voce
-Nel codice ci sono altri comportamenti già programmati, che però **nessuna parola attiva** in questa versione.
-Per usarli basta aggiungere le parole in `VOICE_COMMANDS` / `VOICE_TARGETS`:
-
-`explode` (esplode subito) · `freeze` (si congela) · `scared` (spaventato, si agita) · `angry` (arrabbiato, diventa rosso) ·
-`calm` (calmo) · `multiply` (compaiono 3 copie che gli girano attorno) · `spin` (fa una giravolta) · `hide` (sparisce e ricompare) ·
-`come` (viene al centro) · `go` (va verso un bordo)
+Il riconoscimento è "tollerante": capisce anche storpiature tipo *cruccio, krucio, eco insania, stopp, ciau, ciaone*… (vedi `VOICE_COMMANDS` e `VOICE_PHRASES` in `main.py`).
+Per evitare falsi allarmi, una parola conta come comando solo se ne ha la "forma" (`VOICE_SHAPES`) e non è una parola italiana comune (`NOT_COMMANDS`): così "grazie", "musica" o "sto bene" non fanno scattare niente.
 
 ---
 

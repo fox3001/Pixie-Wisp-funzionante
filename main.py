@@ -231,7 +231,7 @@ def _lev(a, b):
     return prev[-1]
 
 
-def _best_command_for_word(word):
+def _best_command_for_word(word, loose=False):
     raw = _normalize_voice_text(word)
     if not raw:
         return None
@@ -257,7 +257,8 @@ def _best_command_for_word(word):
         return best_cmd
     if best_cmd == 'ciao' and best_dist <= 3:
         return best_cmd
-    if best_cmd == 'crucio' and best_dist <= 4:
+    # crucio: tolleranza alta (le parole troppo corte restano escluse)
+    if best_cmd == 'crucio' and (best_dist <= 4 or (loose and best_dist <= 5 and len(sq) >= 5)):
         return best_cmd
     return None
 
@@ -266,7 +267,8 @@ def _best_command_for_word(word):
 # ("Echo Insania" = crucio). Confrontate tutte attaccate e semplificate,
 # cosi' reggono "eco insania", "echo in sania", "ecoinsanya"...
 VOICE_PHRASES = {
-    'crucio': ['echoinsania', 'ecoinsania', 'ecinsania', 'eccoinsania', 'ecoinsanja'],
+    'crucio': ['echoinsania', 'ecoinsania', 'ecinsania', 'eccoinsania', 'ecoinsanja',
+               'ecoinsana', 'ecoinsonia', 'ecoinzania', 'egoinsania', 'ecoensania', 'insania'],
 }
 
 
@@ -281,7 +283,8 @@ def _check_phrases(full):
             # cerca la formula anche dentro una frase piu' lunga
             for ln in range(max(1, n - 2), n + 3):
                 for i in range(0, max(1, len(joined) - ln + 1)):
-                    if _lev(joined[i:i + ln], p) <= 2:
+                    # tolleranza alta: fino a 3 lettere sbagliate (2 per "insania" da sola)
+                    if _lev(joined[i:i + ln], p) <= (2 if n <= 7 else 3):
                         return cmd
     return None
 
@@ -304,7 +307,7 @@ def _check_text(text):
     # 2) parola per parola
     words = full.split()
     for w in words:
-        cmd = _best_command_for_word(w)
+        cmd = _best_command_for_word(w, loose=True)
         if cmd:
             return cmd
 

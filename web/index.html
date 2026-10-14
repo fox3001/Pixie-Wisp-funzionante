@@ -134,7 +134,8 @@
     <div class="card">
       <h2>Prima di chiudere il box</h2>
       <ol class="hint">
-        <li>Safari → Condividi → <b>Aggiungi alla schermata Home</b>, poi apri Pixie Wisp da lì (tutto schermo, niente barre).</li>
+        <li>Al primo tocco la pagina va a <b>schermo intero</b>: spariscono la barra di Safari e l'ora/batteria. Se ricompaiono, basta un tocco sullo schermo.</li>
+        <li>Il pallino arancione compare solo con il microfono acceso: per il box usa il telecomando e lascia spento «Microfono».</li>
         <li>Collega la cassa Bluetooth e alza il volume.</li>
         <li>Centro di Controllo: <b>Non disturbare</b> acceso e <b>blocco rotazione</b> in orizzontale.</li>
         <li>Impostazioni → Schermo e luminosità → Blocco automatico: <b>Mai</b>.</li>
@@ -195,7 +196,17 @@
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { keepAwake(); Wisp.resume(); if (cfg.voice) startVoice(); } else Wisp.pause(); });
 
   // ---- avvio: un tocco sblocca l'audio
+  // ---- schermo intero: su iPad nasconde la barra di Safari (indirizzo, pulsanti) e la barra di stato.
+  // Si puo' chiedere solo dopo un tocco: lo rifa' a ogni tocco se nel frattempo e' uscita.
+  const isFull = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+  const goFull = () => {
+    if (isFull()) return;
+    const el = document.documentElement, f = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (!f) return;
+    try { const r = f.call(el); if (r && r.catch) r.catch(() => {}); } catch (e) {}
+  };
   $('go').onclick = () => {
+    goFull();
     Wisp.unlockAudio();
     $('start').remove();
     keepAwake();
@@ -209,12 +220,13 @@
   const closeMenu = () => { menu.classList.remove('open'); stopLearn(); };
   let tapT = 0, tapX = 0, tapY = 0;
   $('cv').addEventListener('pointerdown', (e) => {
+    goFull();
     Wisp.unlockAudio();
     const now = performance.now();
     if (now - tapT < 350 && Math.hypot(e.clientX - tapX, e.clientY - tapY) < 60) { tapT = 0; openMenu(); return; }
     tapT = now; tapX = e.clientX; tapY = e.clientY;
   });
-  $('back').onclick = closeMenu;
+  $('back').onclick = () => { closeMenu(); goFull(); };
   // pulsanti di prova ed elenco dei comandi vocali
   for (const [act, label] of ACTIONS) {
     const b = document.createElement('button'); b.textContent = label;

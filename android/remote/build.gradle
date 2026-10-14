@@ -1,0 +1,35 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'org.pixiewisp.remote'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'org.pixiewisp.remote'
+        minSdk 28          // il profilo "tastiera Bluetooth" esiste da Android 9
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+    }
+    signingConfigs {
+        fixed {
+            storeFile file('../app/pixiewisp.keystore')
+            storePassword 'pixiewisp'
+            keyAlias 'pixiewisp'
+            keyPassword 'pixiewisp'
+        }
+    }
+    buildTypes {
+        debug { signingConfig signingConfigs.fixed }
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.fixed
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

@@ -158,7 +158,8 @@
   const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
   const cfg = {
     remote: load('remote', false),            // telecomando: SOLO se attivato
-    keys: load('keys', {}),                   // codice tasto -> { action, name }
+    // codice tasto -> { action, name }. 1, 2, 3 gia' assegnati: sono i tasti che manda l'app Pixie Remote
+    keys: load('keys', { 8: { action: 'crucio', name: '1' }, 9: { action: 'stop', name: '2' }, 10: { action: 'ciao', name: '3' } }),
     pin: load('pin', true),
     zone: load('zone', { on: true, corner: 'tr', size: 'm' }),
     flip: load('flip', false)

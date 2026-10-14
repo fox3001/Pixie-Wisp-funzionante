@@ -49,6 +49,13 @@ La stessa creatura gira anche nel browser: **https://fox3001.github.io/Pixie-Wis
 - Telecomando: deve funzionare come tastiera Bluetooth. Voce: sperimentale e spenta di base.
 - Silenzio, blocco rotazione, schermo sempre acceso e Accesso guidato si impostano sull'iPad (istruzioni nel menu).
 
+## Pixie Remote (telefono come telecomando)
+
+`android/remote/`: mini app Android che fa diventare il telefono una **tastiera Bluetooth**
+con tre pulsanti grandi: Crucio, Stop, Ciao (tasti 1, 2, 3). Funziona con l'iPad (pagina Safari) e con
+l'app Pixie Wisp su un altro Android: in entrambe 1, 2, 3 sono già assegnati, basta attivare «Usa un telecomando».
+Serve Android 9 o più recente. Si scarica dalla stessa release (`PixieRemote.apk`).
+
 ## I file
 
 ```

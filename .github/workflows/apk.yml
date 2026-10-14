@@ -31,19 +31,23 @@ jobs:
         run: gradle --no-daemon assembleRelease
 
       - name: Rinomina
-        run: cp android/app/build/outputs/apk/release/app-release.apk PixieWisp.apk
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk PixieWisp.apk
+          cp android/remote/build/outputs/apk/release/remote-release.apk PixieRemote.apk
 
       - uses: actions/upload-artifact@v4
         with:
           name: PixieWisp-apk
-          path: PixieWisp.apk
+          path: |
+            PixieWisp.apk
+            PixieRemote.apk
 
       - name: Pubblica come "ultima versione" (scaricabile dal telefono)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release delete apk-latest --yes --cleanup-tag || true
-          gh release create apk-latest PixieWisp.apk \
+          gh release create apk-latest PixieWisp.apk PixieRemote.apk \
             --title "Pixie Wisp — ultima versione" \
-            --notes "APK compilato automaticamente dal commit ${GITHUB_SHA::7}. Scarica PixieWisp.apk dal telefono e installalo." \
+            --notes "Compilato automaticamente dal commit ${GITHUB_SHA::7}. PixieWisp.apk = la creatura. PixieRemote.apk = il telefono diventa un telecomando Bluetooth (tasti 1, 2, 3 = Crucio, Stop, Ciao) per iPad o per un altro telefono." \
             --latest

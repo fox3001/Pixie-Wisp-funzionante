@@ -1,0 +1,37 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'org.pixiewisp.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'org.pixiewisp.app'
+        minSdk 26
+        targetSdk 34
+        versionCode 5
+        versionName '5.0'
+    }
+
+    // chiave fissa: cosi' ogni nuova versione si installa sopra la precedente
+    signingConfigs {
+        fixed {
+            storeFile file('pixiewisp.keystore')
+            storePassword 'pixiewisp'
+            keyAlias 'pixiewisp'
+            keyPassword 'pixiewisp'
+        }
+    }
+    buildTypes {
+        debug { signingConfig signingConfigs.fixed }
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.fixed
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

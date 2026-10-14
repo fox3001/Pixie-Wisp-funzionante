@@ -24,6 +24,21 @@ Per evitare falsi allarmi, una parola conta come comando solo se ne ha la "forma
 
 ---
 
+## App Android (APK)
+
+La versione da installare sul telefono è nella cartella `android/`: è la creatura del mockup "Fiamma viva"
+(pagina `android/app/src/main/assets/`) dentro un'app Android nativa.
+
+- Si apre a schermo intero, sopra la schermata di blocco, con lo schermo sempre acceso.
+- Mentre è aperta: **silenzio totale** (niente notifiche, chiamate o suoni del telefono, serve autorizzarlo una volta)
+  e **app fissata** sullo schermo (Home e app recenti non la chiudono).
+- Nessuna scritta sullo schermo. **Doppio tap** apre il menu: torna al wisp, prova le reazioni,
+  telecomando Bluetooth (solo se attivato, con i tasti assegnabili alle azioni), silenzio, esci.
+- Comandi vocali come sopra (stessa logica, in `voice.js`).
+
+**Scaricare l'APK:** ad ogni modifica GitHub lo compila da solo (Actions → "APK") e lo pubblica
+nella release **"Pixie Wisp — ultima versione"** della repo: dal telefono si apre la release e si scarica `PixieWisp.apk`.
+
 ## I file
 
 ```

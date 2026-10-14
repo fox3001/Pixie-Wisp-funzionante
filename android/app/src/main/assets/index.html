@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Pixie Wisp</title>
+<style>
+  :root {
+    --bg: #04060b;
+    --panel: rgba(8, 14, 28, 0.94);
+    --line: rgba(160, 220, 255, 0.16);
+    --text: #e8f7ff;
+    --dim: #8fb3c9;
+    --accent: #5fd0ff;
+    --warn: #ffb36b;
+    --ok: #7ee2a8;
+  }
+  html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; }
+  body { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
+         font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--text); }
+  #cv { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; touch-action: none; }
+
+  /* ---- menu (si apre con doppio tap) ---- */
+  #menu { position: fixed; inset: 0; background: var(--panel); display: none; overflow-y: auto;
+          padding: max(16px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 24px max(20px, env(safe-area-inset-left));
+          box-sizing: border-box; }
+  #menu.open { display: block; }
+  .top { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
+  .top h1 { font-size: 18px; font-weight: 600; margin: 0; flex: 1; letter-spacing: .02em; color: var(--dim); }
+  button { font: inherit; color: var(--text); background: rgba(255,255,255,0.07); border: 1px solid var(--line);
+           border-radius: 12px; min-height: 48px; padding: 0 18px; font-size: 16px; cursor: pointer; }
+  button:active { background: rgba(255,255,255,0.16); }
+  button.primary { background: var(--accent); color: #021018; border-color: transparent; font-weight: 700; font-size: 18px; padding: 0 28px; }
+  button.small { min-height: 40px; padding: 0 14px; font-size: 14px; }
+  button.danger { color: #ffb0a0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .card { border: 1px solid var(--line); border-radius: 16px; padding: 16px; background: rgba(255,255,255,0.025); }
+  .card h2 { font-size: 15px; margin: 0 0 12px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; color: var(--dim); }
+  .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 8px 0; }
+  .row .label { flex: 1; min-width: 120px; font-size: 16px; }
+  .hint { color: var(--dim); font-size: 14px; line-height: 1.4; margin: 6px 0 0; }
+  .status { font-size: 14px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); }
+  .status.ok { color: var(--ok); } .status.warn { color: var(--warn); }
+  .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; border: 1px solid var(--line);
+          border-radius: 999px; padding: 4px 4px 4px 12px; }
+  .chip button { min-height: 28px; height: 28px; width: 28px; padding: 0; border-radius: 50%; font-size: 14px; }
+  .switch { position: relative; width: 60px; height: 34px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch span { position: absolute; inset: 0; border-radius: 999px; background: rgba(255,255,255,0.12); border: 1px solid var(--line); transition: .2s; }
+  .switch span::after { content: ""; position: absolute; width: 26px; height: 26px; left: 3px; top: 3px; border-radius: 50%; background: #cfe8f5; transition: .2s; }
+  .switch input:checked + span { background: var(--accent); }
+  .switch input:checked + span::after { transform: translateX(26px); background: #021018; }
+  .remote-off { opacity: .35; pointer-events: none; }
+  #learn { position: fixed; inset: 0; background: rgba(2,6,14,0.92); display: none; align-items: center; justify-content: center;
+           flex-direction: column; gap: 18px; text-align: center; padding: 24px; }
+  #learn.open { display: flex; }
+  #learn p { font-size: 22px; margin: 0; }
+  .devices { font-size: 14px; color: var(--dim); }
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+
+<div id="menu" role="dialog" aria-label="Menu">
+  <div class="top">
+    <h1>Pixie Wisp</h1>
+    <button class="primary" id="back">Torna al wisp</button>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h2>Prova le reazioni</h2>
+      <div class="row">
+        <button data-cmd="crucio">Crucio</button>
+        <button data-cmd="stop">Stop</button>
+        <button data-cmd="ciao">Ciao</button>
+      </div>
+      <p class="hint">A voce: «Crucio» o «Echo Insania», «Stop», «Ciao».</p>
+      <div class="row"><span class="label">Microfono</span><span class="status" id="st-mic">…</span></div>
+    </div>
+
+    <div class="card">
+      <h2>Telecomando Bluetooth</h2>
+      <div class="row">
+        <span class="label">Usa un telecomando</span>
+        <label class="switch"><input type="checkbox" id="remote-on"><span></span></label>
+      </div>
+      <div id="remote-box">
+        <div class="row">
+          <button id="bt-settings">Collega un dispositivo</button>
+          <span class="devices" id="devices"></span>
+        </div>
+        <div id="map"></div>
+        <p class="hint">Premi «Assegna tasto» e poi il tasto del telecomando che deve far partire l'azione.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Tutto in secondo piano</h2>
+      <div class="row">
+        <span class="label">Silenzio totale<br><span class="hint">niente notifiche, chiamate e suoni del telefono</span></span>
+        <span class="status" id="st-dnd">…</span>
+      </div>
+      <div class="row" id="dnd-fix" hidden><button id="dnd-settings">Autorizza il silenzio totale</button></div>
+      <div class="row">
+        <span class="label">Fissa l'app sullo schermo<br><span class="hint">non si esce con Home o con le app recenti</span></span>
+        <label class="switch"><input type="checkbox" id="pin-on"><span></span></label>
+      </div>
+      <div class="row"><button class="danger" id="exit">Esci dall'app</button></div>
+    </div>
+  </div>
+</div>
+
+<div id="learn">
+  <p id="learn-text">Premi un tasto sul telecomando…</p>
+  <button id="learn-cancel">Annulla</button>
+</div>
+
+<script src="lament.js"></script>
+<script src="voice.js"></script>
+<script src="engine.js"></script>
+<script>
+(function () {
+  const A = window.Android || null;            // ponte verso l'app Android (assente nel browser)
+  const $ = (id) => document.getElementById(id);
+  const ACTIONS = [['crucio', 'Crucio'], ['stop', 'Stop'], ['ciao', 'Ciao']];
+
+  // ---- impostazioni salvate
+  const load = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
+  const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+  const cfg = {
+    remote: load('remote', false),            // telecomando: SOLO se attivato
+    keys: load('keys', {}),                   // codice tasto -> { action, name }
+    pin: load('pin', true)
+  };
+  const pushCfg = () => {
+    if (!A) return;
+    try { A.setRemoteEnabled(!!cfg.remote); } catch (e) {}
+    try { A.setPinned(!!cfg.pin); } catch (e) {}
+  };
+
+  // ---- creatura
+  Wisp.start($('cv'));
+  let lastCmd = '', lastAt = 0;
+  const run = (cmd) => {
+    const now = Date.now();
+    if (cmd === lastCmd && now - lastAt < 1500) return;  // risultati parziali e finali dicono la stessa cosa
+    lastCmd = cmd; lastAt = now;
+    Wisp.command(cmd);
+  };
+
+  // ---- menu: doppio tap
+  const menu = $('menu');
+  const isOpen = () => menu.classList.contains('open');
+  const openMenu = () => { menu.classList.add('open'); refreshStatus(); renderMap(); };
+  const closeMenu = () => { menu.classList.remove('open'); stopLearn(); };
+  let tapT = 0, tapX = 0, tapY = 0;
+  $('cv').addEventListener('pointerdown', (e) => {
+    Wisp.unlockAudio();
+    const now = performance.now();
+    if (now - tapT < 350 && Math.hypot(e.clientX - tapX, e.clientY - tapY) < 60) { tapT = 0; openMenu(); return; }
+    tapT = now; tapX = e.clientX; tapY = e.clientY;
+  });
+  $('back').onclick = closeMenu;
+  window.onBack = () => { if (learning) stopLearn(); else if (isOpen()) closeMenu(); };
+  document.querySelectorAll('[data-cmd]').forEach((b) => { b.onclick = () => { closeMenu(); lastCmd = ''; run(b.dataset.cmd); }; });
+
+  // ---- voce (dall'app)
+  window.onSpeech = (text) => { const cmd = VoiceMatch.checkText(text); if (cmd) run(cmd); };
+
+  // ---- telecomando
+  let learning = null;
+  const startLearn = (action, label) => { learning = action; $('learn-text').textContent = 'Premi sul telecomando il tasto per «' + label + '»…'; $('learn').classList.add('open'); };
+  const stopLearn = () => { learning = null; $('learn').classList.remove('open'); };
+  $('learn-cancel').onclick = stopLearn;
+  window.onRemoteKey = (code, name, device) => {
+    code = String(code);
+    if (learning) {
+      cfg.keys[code] = { action: learning, name: name || ('Tasto ' + code), device: device || '' };
+      save('keys', cfg.keys); stopLearn(); renderMap(); return;
+    }
+    if (!cfg.remote || isOpen()) return;
+    const k = cfg.keys[code];
+    if (k) { lastCmd = ''; run(k.action); }
+  };
+  const renderMap = () => {
+    const box = $('map'); box.innerHTML = '';
+    for (const [act, label] of ACTIONS) {
+      const row = document.createElement('div'); row.className = 'row';
+      const l = document.createElement('span'); l.className = 'label'; l.textContent = label; row.appendChild(l);
+      for (const code in cfg.keys) {
+        if (cfg.keys[code].action !== act) continue;
+        const c = document.createElement('span'); c.className = 'chip'; c.textContent = cfg.keys[code].name;
+        const x = document.createElement('button'); x.textContent = '×'; x.setAttribute('aria-label', 'Togli ' + cfg.keys[code].name);
+        x.onclick = () => { delete cfg.keys[code]; save('keys', cfg.keys); renderMap(); };
+        c.appendChild(x); row.appendChild(c);
+      }
+      const add = document.createElement('button'); add.className = 'small'; add.textContent = 'Assegna tasto';
+      add.onclick = () => startLearn(act, label); row.appendChild(add);
+      box.appendChild(row);
+    }
+    $('remote-box').classList.toggle('remote-off', !cfg.remote);
+  };
+  $('remote-on').checked = !!cfg.remote;
+  $('remote-on').onchange = (e) => { cfg.remote = e.target.checked; save('remote', cfg.remote); pushCfg(); renderMap(); };
+  $('bt-settings').onclick = () => { if (A) A.openBluetoothSettings(); };
+
+  // ---- silenzio, schermo fissato, uscita
+  $('pin-on').checked = !!cfg.pin;
+  $('pin-on').onchange = (e) => { cfg.pin = e.target.checked; save('pin', cfg.pin); pushCfg(); };
+  $('dnd-settings').onclick = () => { if (A) A.openDndSettings(); };
+  $('exit').onclick = () => { if (A) A.exitApp(); };
+
+  const setStatus = (el, text, ok) => { el.textContent = text; el.className = 'status ' + (ok ? 'ok' : 'warn'); };
+  const refreshStatus = () => {
+    let st = { dnd: 'off', mic: 'off', devices: [] };
+    try { if (A) st = JSON.parse(A.getStatus()); } catch (e) {}
+    setStatus($('st-dnd'), st.dnd === 'on' ? 'Attivo' : 'Non autorizzato', st.dnd === 'on');
+    $('dnd-fix').hidden = st.dnd === 'on';
+    setStatus($('st-mic'), st.mic === 'on' ? 'In ascolto' : st.mic === 'denied' ? 'Permesso negato' : 'Non disponibile', st.mic === 'on');
+    $('devices').textContent = st.devices && st.devices.length ? 'Collegati: ' + st.devices.join(', ') : 'Nessun telecomando collegato';
+  };
+  window.onStatus = () => { if (isOpen()) refreshStatus(); };
+  window.onAppPause = () => Wisp.pause();
+  window.onAppResume = () => { Wisp.resume(); if (isOpen()) refreshStatus(); };
+
+  pushCfg();
+})();
+</script>
+</body>
+</html>

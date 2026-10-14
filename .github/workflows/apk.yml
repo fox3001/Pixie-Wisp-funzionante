@@ -1,0 +1,49 @@
+name: APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'android/**'
+      - '.github/workflows/apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Compila l'APK
+        working-directory: android
+        run: gradle --no-daemon assembleRelease
+
+      - name: Rinomina
+        run: cp android/app/build/outputs/apk/release/app-release.apk PixieWisp.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PixieWisp-apk
+          path: PixieWisp.apk
+
+      - name: Pubblica come "ultima versione" (scaricabile dal telefono)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete apk-latest --yes --cleanup-tag || true
+          gh release create apk-latest PixieWisp.apk \
+            --title "Pixie Wisp — ultima versione" \
+            --notes "APK compilato automaticamente dal commit ${GITHUB_SHA::7}. Scarica PixieWisp.apk dal telefono e installalo." \
+            --latest

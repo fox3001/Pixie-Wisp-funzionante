@@ -9,7 +9,9 @@ import android.bluetooth.BluetoothHidDevice;
 import android.bluetooth.BluetoothHidDeviceAppSdpSettings;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.IntentFilter;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -31,6 +33,8 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -68,7 +72,11 @@ public class RemoteActivity extends Activity {
     private BluetoothDevice host;
 
     private TextView status;
-    private LinearLayout devicesBox;
+    private LinearLayout devicesBox, foundBox;
+    private Button scanBtn;
+    private final Map<String, BluetoothDevice> found = new LinkedHashMap<>();
+    private boolean scanning = false;
+    private BluetoothDevice pendingBond;
     private final List<Button> actionButtons = new ArrayList<>();
 
     // ------------------------------------------------------------------
@@ -78,11 +86,87 @@ public class RemoteActivity extends Activity {
         prefs = getSharedPreferences("remote", MODE_PRIVATE);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         buildUi();
+        IntentFilter f = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        f.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+        f.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+        if (Build.VERSION.SDK_INT >= 33) registerReceiver(btReceiver, f, Context.RECEIVER_EXPORTED);
+        else registerReceiver(btReceiver, f);
         if (hasPerms()) init(); else requestPerms();
+    }
+
+    // ricerca dei dispositivi vicini (l'iPad e' visibile mentre e' aperta la sua pagina Bluetooth)
+    private final BroadcastReceiver btReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context c, Intent i) {
+            String a = i.getAction();
+            if (BluetoothDevice.ACTION_FOUND.equals(a)) {
+                BluetoothDevice d = i.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                if (d == null) return;
+                String n = null;
+                try { n = d.getName(); } catch (Exception ignored) { }
+                if (n == null || n.isEmpty()) return;      // senza nome: non e' un iPad riconoscibile
+                found.put(d.getAddress(), d);
+                renderFound();
+            } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(a)) {
+                scanning = false;
+                scanBtn.setText("Cerca l'iPad");
+                if (found.isEmpty()) setStatus("Nessun dispositivo trovato: sull'iPad apri Impostazioni → Bluetooth e riprova.", false);
+            } else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(a)) {
+                BluetoothDevice d = i.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                int st = i.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_NONE);
+                if (d != null && d.equals(pendingBond)) {
+                    if (st == BluetoothDevice.BOND_BONDED) {
+                        pendingBond = null;
+                        setStatus("Associato a " + name(d) + ". Mi collego…", false);
+                        ui.postDelayed(() -> connect(d), 800);
+                    } else if (st == BluetoothDevice.BOND_NONE) {
+                        pendingBond = null;
+                        setStatus("Associazione non riuscita, riprova.", false);
+                    }
+                }
+                refreshDevices();
+            }
+        }
+    };
+
+    private void toggleScan() {
+        if (adapter == null || !hasPerms()) { requestPerms(); return; }
+        if (scanning) { try { adapter.cancelDiscovery(); } catch (Exception ignored) { } return; }
+        found.clear();
+        renderFound();
+        try {
+            scanning = adapter.startDiscovery();
+        } catch (Exception e) { scanning = false; }
+        if (scanning) {
+            scanBtn.setText("Ferma la ricerca");
+            setStatus("Cerco… sull'iPad tieni aperta Impostazioni → Bluetooth.", false);
+        } else setStatus("Non riesco a cercare: controlla che il Bluetooth sia acceso.", false);
+    }
+
+    private void pick(BluetoothDevice d) {
+        try { adapter.cancelDiscovery(); } catch (Exception ignored) { }
+        if (d.getBondState() == BluetoothDevice.BOND_BONDED) { connect(d); return; }
+        pendingBond = d;
+        setStatus("Associo " + name(d) + "… conferma il codice su tutti e due.", false);
+        try { if (!d.createBond()) connect(d); } catch (Exception e) { connect(d); }
+    }
+
+    private void renderFound() {
+        ui.post(() -> {
+            foundBox.removeAllViews();
+            for (BluetoothDevice d : found.values()) {
+                Button b = smallButton(name(d));
+                b.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
+                b.setOnClickListener(v -> pick(d));
+                foundBox.addView(b);
+            }
+        });
     }
 
     @Override
     protected void onDestroy() {
+        try { unregisterReceiver(btReceiver); } catch (Exception ignored) { }
+        try { if (adapter != null) adapter.cancelDiscovery(); } catch (Exception ignored) { }
         if (hid != null) {
             try { if (host != null) hid.disconnect(host); } catch (Exception ignored) { }
             try { hid.unregisterApp(); } catch (Exception ignored) { }
@@ -92,14 +176,17 @@ public class RemoteActivity extends Activity {
     }
 
     private boolean hasPerms() {
-        if (Build.VERSION.SDK_INT < 31) return true;
+        if (Build.VERSION.SDK_INT < 31)
+            return checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
         return checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
-                && checkSelfPermission(Manifest.permission.BLUETOOTH_ADVERTISE) == PackageManager.PERMISSION_GRANTED;
+                && checkSelfPermission(Manifest.permission.BLUETOOTH_ADVERTISE) == PackageManager.PERMISSION_GRANTED
+                && checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED;
     }
 
     private void requestPerms() {
-        requestPermissions(new String[]{Manifest.permission.BLUETOOTH_CONNECT,
-                Manifest.permission.BLUETOOTH_ADVERTISE}, REQ_PERMS);
+        if (Build.VERSION.SDK_INT < 31) requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQ_PERMS);
+        else requestPermissions(new String[]{Manifest.permission.BLUETOOTH_CONNECT,
+                Manifest.permission.BLUETOOTH_ADVERTISE, Manifest.permission.BLUETOOTH_SCAN}, REQ_PERMS);
     }
 
     @Override
@@ -300,18 +387,24 @@ public class RemoteActivity extends Activity {
         root.addView(pad);
 
         ScrollView sv = new ScrollView(this);
-        sv.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(230)));
+        sv.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(280)));
         LinearLayout setup = new LinearLayout(this);
         setup.setOrientation(LinearLayout.VERTICAL);
         setup.setPadding(0, dp(10), 0, 0);
 
-        Button vis = smallButton("Rendi il telefono visibile all'iPad");
-        vis.setOnClickListener(v -> makeDiscoverable());
-        setup.addView(vis);
-        setup.addView(text("1. Tocca il pulsante qui sopra.\n"
-                + "2. Sull'iPad: Impostazioni → Bluetooth → tocca il nome di questo telefono.\n"
+        setup.addView(text("1. Sull'iPad apri Impostazioni → Bluetooth e lascia la pagina aperta.\n"
+                + "2. Qui tocca «Cerca l'iPad», poi toccalo nella lista e conferma il codice su tutti e due.\n"
                 + "3. Nella pagina di Pixie Wisp (doppio tap → menu) attiva «Usa un telecomando»: "
                 + "Crucio, Stop e Ciao sono già assegnati ai tasti 1, 2, 3.", 14, "#8FB3C9"));
+        scanBtn = smallButton("Cerca l'iPad");
+        scanBtn.setOnClickListener(v -> toggleScan());
+        setup.addView(scanBtn);
+        foundBox = new LinearLayout(this);
+        foundBox.setOrientation(LinearLayout.VERTICAL);
+        setup.addView(foundBox);
+        Button vis = smallButton("Rendi il telefono visibile (per altri telefoni)");
+        vis.setOnClickListener(v -> makeDiscoverable());
+        setup.addView(vis);
         TextView dt = text("Dispositivi associati", 14, "#8FB3C9");
         dt.setTypeface(Typeface.DEFAULT_BOLD);
         dt.setPadding(0, dp(14), 0, 0);

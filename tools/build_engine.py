@@ -24,10 +24,10 @@ rep("""      fetch('/_blob/c6cafc5a6419402041aceeb351c79972')
         .then((b64) => { if (!b64) throw new Error('no lament'); const bin = atob(b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u.buffer; })""")
 
 # larghezza della scena che segue lo schermo
-rep("    const LW = 760, LH = 440, R = 120.8; // creatura ingrandita (era 58: +1/4, +1/4, +1/3)\n",
+rep("    const LW = 760, LH = 440, R = 120.8 * ((self.props && +self.props.grandezza) || 1);\n",
 """    // l'altezza della scena e' fissa (440): la larghezza segue lo schermo, cosi' la creatura
     // non si deforma mai e su schermi piu' lunghi ha solo piu' spazio ai lati
-    const LH = 440, R = 120.8;
+    const LH = 440, R = 120.8 * ((self.props && +self.props.grandezza) || 1);
     let LW = 760;
 """)
 rep("    const DEPTH = LH * 1.5, FOC = 650, VX = LW / 2, VY = LH / 2;\n",
@@ -187,6 +187,8 @@ api = """
   const wisp = new Component();
   const FXK = { incendio: 1, gelatina: 1, accio: 1, vieni: 1 };
   window.Wisp = {
+    // impostazioni prima di start(): { grandezza: 5/3 } = creatura piu' grande di 2/3
+    config(p) { Object.assign(wisp.props, p || {}); },
     start(canvas) { wisp._cv = canvas; wisp._audio(); wisp._run(); },
     unlockAudio() { wisp._audio(); },
     // angolo coperto: { on, corner: 'tr'|'tl'|'br'|'bl', w, h (dp), show }

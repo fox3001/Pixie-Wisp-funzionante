@@ -141,9 +141,10 @@ class Component extends DCLogic {
     if (!ctx) return;
 
     // ---- costanti e utilita'
+    // grandezza: 1 = come nel mockup (era 58: +1/4, +1/4, +1/3); l'app la puo' cambiare (es. 5/3 = +2/3)
     // l'altezza della scena e' fissa (440): la larghezza segue lo schermo, cosi' la creatura
     // non si deforma mai e su schermi piu' lunghi ha solo piu' spazio ai lati
-    const LH = 440, R = 120.8;
+    const LH = 440, R = 120.8 * ((self.props && +self.props.grandezza) || 1);
     let LW = 760;
     // profondita' della scatola = lato corto della scena; prospettiva verso il centro
     const DEPTH = LH * 1.5, FOC = 650, VY = LH / 2;
@@ -1860,6 +1861,8 @@ class Component extends DCLogic {
   const wisp = new Component();
   const FXK = { incendio: 1, gelatina: 1, accio: 1, vieni: 1 };
   window.Wisp = {
+    // impostazioni prima di start(): { grandezza: 5/3 } = creatura piu' grande di 2/3
+    config(p) { Object.assign(wisp.props, p || {}); },
     start(canvas) { wisp._cv = canvas; wisp._audio(); wisp._run(); },
     unlockAudio() { wisp._audio(); },
     // angolo coperto: { on, corner: 'tr'|'tl'|'br'|'bl', w, h (dp), show }

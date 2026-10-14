@@ -143,6 +143,45 @@ Reagisce alla voce e a un telecomando:
   - Luminosità al massimo: il vetro riflette solo una parte della luce.
 
 
+3.6  COSTRUIRE IL BOX (Pepper's ghost con l'iPad sopra)
+
+  Regola: Piwo appare sempre sulla verticale del punto in cui il vetro
+  (prolungato) tocca il piano dello schermo. Se il vetro parte dallo spigolo
+  in fondo, Piwo sembra appoggiato al fondo. Soluzione scelta: aggiungere
+  dietro un "tunnel" nero, così Piwo ha spazio vuoto alle spalle senza
+  perdere schermo.
+
+  Vista di lato (spettatore a destra):
+
+        tunnel (D2)           box attuale (D1)
+    +----------------+=======[ iPad, schermo giù ]=======+
+    |                |\                                  |
+    |   nero opaco   | \                                 |
+    |                |  \   vetro a 45°                  |   <-- tu
+    |                |   \                               |
+    |   Piwo appare  |    \                              |
+    |   su questa  ->|     \                             |
+    |   verticale    |      \                            |
+    +----------------+-------\---------------------------+
+                         piano d'appoggio
+
+  1. Sezione quadrata: il box attuale (profondità D1) deve essere alto
+     quanto è profondo, così il vetro da angolo ad angolo è a 45° e tutto
+     lo schermo si riflette.
+  2. Vetro dallo spigolo alto in fondo allo spigolo basso davanti.
+  3. Tunnel dietro lo spigolo, profondo D2, chiuso sopra, sotto, sui lati
+     e in fondo.
+  4. Tutto nero opaco dentro (velluto, cartoncino o vernice opaca), lati
+     chiusi, aperto solo davanti.
+  5. Un oggetto scuro appena illuminato sul fondo, all'altezza dello
+     spigolo o poco davanti: dà all'occhio il riferimento della profondità.
+
+     Tunnel D2      Profondità totale   Piwo, visto da davanti
+     nessuno        D1                  in fondo, contro la parete
+     1/2 D1         1,5 D1              a 2/3, con 1/2 D1 di nero dietro
+     D1             2 D1                esattamente a metà
+
+
 ------------------------------------------------------------------------------
 4. IL PROCESSO CREATIVO
 ------------------------------------------------------------------------------

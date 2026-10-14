@@ -1579,23 +1579,31 @@ class Component extends DCLogic {
             }
             return out;
           };
-          // occhio strizzato ">" (o "<"): due braccia che partono dalla punta, rivolta verso il centro del viso,
-          // leggermente curve, spesse e con le estremita' arrotondate
+          // occhio strizzato ">" (o "<"), come una pennellata: la punta verso il centro del viso e' spessa e appuntita,
+          // il braccio di sopra e' lungo, pesante e arcuato verso l'alto, quello di sotto piu' corto e sottile;
+          // tutte e due le braccia finiscono a punta verso l'esterno
           const chevPts = () => {
             const d = e.x < C.x ? 1 : -1, kx = Math.max(0.35, e.rw / er), arms = [];
-            for (const sg of [-1, 1]) {
+            const V = [0.72, 0.04];
+            // [punto finale esterno, punto di controllo della curva, spessore massimo]
+            for (const A of [[[-1.2, -0.7], [-0.2, -0.66], 0.6], [[-1.0, 0.66], [-0.15, 0.38], 0.46]]) {
+              const P2 = A[0], P1 = A[1], W = A[2];
+              // la punta interna sporge un poco oltre il vertice: le due braccia si incrociano e fanno lo spigolo
+              const dx = V[0] - P1[0], dy = V[1] - P1[1], dl = Math.hypot(dx, dy);
+              const P0 = [V[0] + dx / dl * 0.1, V[1] + dy / dl * 0.1];
               const out = [];
-              for (let i = 0; i <= 14; i++) {
-                const t = i / 14;
-                const bx = 0.5 - 1.45 * t, by = sg * (0.62 * t + 0.1 * Math.sin(Math.PI * t));
-                out.push({ x: e.x + bx * er * d * kx, y: e.y + by * er, w: er * 0.52 * (1 - 0.2 * t) });
+              for (let i = 0; i <= 22; i++) {
+                const t = i / 22, u = 1 - t;
+                const bx = u * u * P0[0] + 2 * u * t * P1[0] + t * t * P2[0], by = u * u * P0[1] + 2 * u * t * P1[1] + t * t * P2[1];
+                const w = er * W * Math.min(1, 0.35 + t / 0.12) * Math.pow(1 - t, 0.8);
+                out.push({ x: e.x + bx * er * d * kx, y: e.y + by * er, w: Math.max(0.3, w) });
               }
               arms.push(out);
             }
             return arms;
           };
           // riempie la pennellata con spessore variabile (mul = quanto piu' larga)
-          const fillStroke = (pts, mul) => {
+          const fillStroke = (pts, mul, noCap) => {
             const L = [], Rr = [];
             for (let i = 0; i < pts.length; i++) {
               const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
@@ -1607,7 +1615,7 @@ class Component extends DCLogic {
             for (const q of L) ctx.lineTo(q[0], q[1]);
             for (let i = Rr.length - 1; i >= 0; i--) ctx.lineTo(Rr[i][0], Rr[i][1]);
             ctx.closePath(); ctx.fill();
-            ctx.beginPath(); ctx.arc(pts[0].x, pts[0].y, pts[0].w * mul / 2, 0, Math.PI * 2); ctx.fill();
+            if (!noCap) { ctx.beginPath(); ctx.arc(pts[0].x, pts[0].y, pts[0].w * mul / 2, 0, Math.PI * 2); ctx.fill(); }
           };
           // occhio "di luce": niente bordo netto, sfuma verso l'esterno, ha volume e vibra appena
           // dk: se passato, disegna la stessa forma tutta in quel colore scuro (serve per l'alone "maschera noBK")
@@ -1634,10 +1642,9 @@ class Component extends DCLogic {
               // negli stessi colori del saluto (bianco con il bordo azzurro), non arrossati
               const edC = dk || [200, 235, 255];
               for (const arm of chevPts()) {
-                for (const st of [[2.2, 0.14, edC], [1.5, 0.4, edC], [1, 1, dk || [255, 255, 255]]]) {
+                for (const st of [[1.7, 0.14, edC], [1.3, 0.4, edC], [1, 1, dk || [255, 255, 255]]]) {
                   ctx.globalAlpha = vA * st[1] * xe; ctx.fillStyle = 'rgb(' + c3(st[2]) + ')';
-                  fillStroke(arm, st[0] * sh);
-                  const q = arm[arm.length - 1]; ctx.beginPath(); ctx.arc(q.x, q.y, q.w * st[0] * sh / 2, 0, Math.PI * 2); ctx.fill();
+                  fillStroke(arm, st[0] * sh, true);
                 }
               }
               if (xe > 0.99) return;

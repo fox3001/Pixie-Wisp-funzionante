@@ -581,9 +581,9 @@ class Component extends DCLogic {
         const rgc = rangeAt(C.z);
         C.x = clamp(C.x + rnd(-ax, ax) * f60, rgc.x0, rgc.x1);
         C.y = clamp(C.y + rnd(-ay, ay) * f60, rgc.y0, rgc.y1);
-        S.tint = Math.min(1, t / 5); S.squint = Math.pow(Math.min(1, t / 3.7), 1.3); // si chiudono piano piano
-        // poi diventano due ">  <" strizzati: pieni da 1.3 secondi prima dell'esplosione
-        S.xeye = smoothst(2.3, 3.7, t);
+        S.tint = Math.min(1, t / 5); S.squint = Math.pow(Math.min(1, t / 2.6), 1.3); // si chiudono piano piano
+        // poi il ciglio chiuso si apre in due ">  <" strizzati: pieni da 1.3 secondi prima dell'esplosione
+        S.xeye = smoothst(2.5, 3.7, t);
         S.pulse = 1 + 0.06 * Math.sin(60 * t);
         if (t >= 5) enterExplode();
       } else if (S.mode === 'stop') {
@@ -1581,7 +1581,8 @@ class Component extends DCLogic {
           // occhio strizzato ">" (o "<"), come una pennellata: la punta verso il centro del viso e' spessa e appuntita,
           // il braccio di sopra e' lungo, pesante e arcuato verso l'alto, quello di sotto piu' corto e sottile;
           // tutte e due le braccia finiscono a punta verso l'esterno
-          const chevPts = () => {
+          // m = 0: e' ancora il ciglio chiuso (le due braccia coincidono con l'arco), m = 1: ">" pieno
+          const chevPts = (m) => {
             const d = e.x < C.x ? 1 : -1, kx = Math.max(0.35, e.rw / er), arms = [];
             const V = [0.72, 0.04];
             // [punto finale esterno, punto di controllo della curva, spessore massimo]
@@ -1595,7 +1596,9 @@ class Component extends DCLogic {
                 const t = i / 22, u = 1 - t;
                 const bx = u * u * P0[0] + 2 * u * t * P1[0] + t * t * P2[0], by = u * u * P0[1] + 2 * u * t * P1[1] + t * t * P2[1];
                 const w = er * W * Math.min(1, 0.35 + t / 0.12) * Math.pow(1 - t, 0.8);
-                out.push({ x: e.x + bx * er * d * kx, y: e.y + by * er, w: Math.max(0.3, w) });
+                // lo stesso punto sul ciglio chiuso: dall'estremita' interna a quella esterna
+                const lu = 1 - 2 * t, lx = lu * 1.05, ly = 0.1 + 0.24 * (1 - lu * lu), lw = er * (0.22 * Math.pow(Math.sin(Math.PI * t), 0.8) + 0.02);
+                out.push({ x: e.x + (lx + (bx - lx) * m) * er * d * kx, y: e.y + (ly + (by - ly) * m) * er, w: Math.max(0.3, lw + (w - lw) * m) });
               }
               arms.push(out);
             }
@@ -1636,28 +1639,34 @@ class Component extends DCLogic {
             }
             const xe = (S.mode === 'crucio' || S.mode === 'stop') ? (S.xeye || 0) : 0;
             const cl = e.cl || 0;
+            const shut = xe > 0.01 ? Math.max(cl, xe) : cl;
             if (xe > 0.01) {
-              // crucio: occhi strizzati a ">  <", pennellate spesse con le punte verso il centro del viso,
-              // negli stessi colori del saluto (bianco con il bordo azzurro), non arrossati
-              const edC = dk || [200, 235, 255];
-              for (const arm of chevPts()) {
-                for (const st of [[1.7, 0.14, edC], [1.3, 0.4, edC], [1, 1, dk || [255, 255, 255]]]) {
-                  ctx.globalAlpha = vA * st[1] * xe; ctx.fillStyle = 'rgb(' + c3(st[2]) + ')';
-                  fillStroke(arm, st[0] * sh, true);
-                }
+              // crucio: l'occhio chiuso (ciglio ad arco) si trasforma piano piano in ">  <": la punta interna del ciglio
+              // diventa lo spigolo e il ciglio si apre in due braccia. Colori del saluto, braccia piene (non trasparenti)
+              const arms = chevPts(xe), edC = dk || [200, 235, 255];
+              if (dk && xe > 0.05) {
+                // per aloni e bagliori: riempie anche l'apertura tra le braccia, cosi' dietro non resta un "dente" di luce
+                ctx.globalAlpha = vA * shut * xe * 0.4; ctx.fillStyle = 'rgb(' + c3(dk) + ')';
+                ctx.beginPath(); ctx.moveTo(arms[0][0].x, arms[0][0].y);
+                for (const q of arms[0]) ctx.lineTo(q.x, q.y);
+                for (let k = arms[1].length - 1; k >= 0; k--) ctx.lineTo(arms[1][k].x, arms[1][k].y);
+                ctx.closePath(); ctx.fill();
               }
-              if (xe > 0.99) return;
-            }
-            if (cl > 0.01) {
+              for (const st of [[1.7, 0.14, edC], [1.3, 0.4, edC], [1, 1, dk || [255, 255, 255]]]) {
+                ctx.globalAlpha = vA * st[1] * shut; ctx.fillStyle = 'rgb(' + c3(st[2]) + ')';
+                for (const arm of arms) fillStroke(arm, st[0] * sh, true);
+              }
+              if (shut > 0.99) return;
+            } else if (cl > 0.01) {
               // occhio chiuso: pennellata delle ciglia ad arco verso il basso, assottigliata alle punte
               const lp = lashPts();
               for (const st of [[2.2, 0.14, ed], [1.5, 0.4, ed], [1, 1, dk || [255, 255, 255]]]) {
-                ctx.globalAlpha = vA * st[1] * cl * (1 - xe); ctx.fillStyle = 'rgb(' + c3(st[2]) + ')';
+                ctx.globalAlpha = vA * st[1] * cl; ctx.fillStyle = 'rgb(' + c3(st[2]) + ')';
                 fillStroke(lp, st[0] * sh);
               }
               if (cl > 0.99) return;
             }
-            const vO = vA * (1 - cl) * (1 - xe);
+            const vO = vA * (1 - shut);
             const kx = Math.max(0.05, e.rw / er) * sh, ky = Math.max(0.03, e.rh / er) * (2 - sh);
             const R1 = er * 1.12;
             ctx.save();
@@ -1703,7 +1712,7 @@ class Component extends DCLogic {
             const OFF = ((ctx.canvas && ctx.canvas.width) || 2000) / dp + er * 6;
             const xeN = (S.mode === 'crucio' || S.mode === 'stop') ? (S.xeye || 0) : 0;
             // forme sottili (ciglio chiuso, sorriso, ">  <"): alone stretto e poco sfocato, cosi' non diventa un pallino
-            const thin = S.smile ? 1 : Math.max(xeN, e.cl || 0);
+            const thin = S.smile ? 1 : Math.max(xeN * 0.35, (e.cl || 0) * (1 - xeN));
             const hk = Math.max(0.35, Math.min(1, e.rh / er)) * (1 - thin) + 0.45 * thin;
             const bk = (0.4 + 0.6 * hk) * (1 - 0.55 * thin);
             for (const ps of layers) {

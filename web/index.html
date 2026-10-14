@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pixie Wisp">
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Pixie Wisp</title>
+<style>
+  :root {
+    --panel: rgba(8, 14, 28, 0.95);
+    --line: rgba(160, 220, 255, 0.16);
+    --text: #e8f7ff;
+    --dim: #8fb3c9;
+    --accent: #5fd0ff;
+    --warn: #ffb36b;
+    --ok: #7ee2a8;
+  }
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; overscroll-behavior: none; }
+  body { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none;
+         font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; color: var(--text); }
+  #cv { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; display: block; touch-action: none; }
+
+  /* avvio: Safari vuole un tocco prima di far suonare qualcosa */
+  #start { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: #000; z-index: 5; }
+  #start button { font-size: 20px; padding: 0 34px; min-height: 60px; border-radius: 30px; }
+
+  #menu { position: fixed; inset: 0; background: var(--panel); display: none; overflow-y: auto; -webkit-overflow-scrolling: touch;
+          padding: max(16px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 24px max(20px, env(safe-area-inset-left));
+          box-sizing: border-box; z-index: 3; }
+  #menu.open { display: block; }
+  .top { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
+  .top h1 { font-size: 18px; font-weight: 600; margin: 0; flex: 1; letter-spacing: .02em; color: var(--dim); }
+  button { font: inherit; color: var(--text); background: rgba(255,255,255,0.07); border: 1px solid var(--line);
+           border-radius: 12px; min-height: 48px; padding: 0 18px; font-size: 16px; cursor: pointer; }
+  button:active { background: rgba(255,255,255,0.16); }
+  button.primary { background: var(--accent); color: #021018; border-color: transparent; font-weight: 700; font-size: 18px; padding: 0 28px; }
+  button.small { min-height: 40px; padding: 0 14px; font-size: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .card { border: 1px solid var(--line); border-radius: 16px; padding: 16px; background: rgba(255,255,255,0.025); }
+  .card h2 { font-size: 15px; margin: 0 0 12px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; color: var(--dim); }
+  .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 8px 0; }
+  .row .label { flex: 1; min-width: 120px; font-size: 16px; }
+  .hint { color: var(--dim); font-size: 14px; line-height: 1.4; margin: 6px 0 0; }
+  ol.hint { padding-left: 20px; }
+  ol.hint li { margin: 4px 0; }
+  .status { font-size: 14px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); }
+  .status.ok { color: var(--ok); } .status.warn { color: var(--warn); }
+  .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; border: 1px solid var(--line);
+          border-radius: 999px; padding: 4px 4px 4px 12px; }
+  .chip button { min-height: 28px; height: 28px; width: 28px; padding: 0; border-radius: 50%; font-size: 14px; }
+  .switch { position: relative; width: 60px; height: 34px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .switch span { position: absolute; inset: 0; border-radius: 999px; background: rgba(255,255,255,0.12); border: 1px solid var(--line); transition: .2s; }
+  .switch span::after { content: ""; position: absolute; width: 26px; height: 26px; left: 3px; top: 3px; border-radius: 50%; background: #cfe8f5; transition: .2s; }
+  .switch input:checked + span { background: var(--accent); }
+  .switch input:checked + span::after { transform: translateX(26px); background: #021018; }
+  .off { opacity: .35; pointer-events: none; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; min-height: 44px; padding: 0 14px; font-size: 15px; background: transparent; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button.on { background: var(--accent); color: #021018; font-weight: 700; }
+  #learn { position: fixed; inset: 0; background: rgba(2,6,14,0.94); display: none; align-items: center; justify-content: center;
+           flex-direction: column; gap: 18px; text-align: center; padding: 24px; z-index: 4; }
+  #learn.open { display: flex; }
+  #learn p { font-size: 22px; margin: 0; }
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+
+<div id="start"><button class="primary" id="go">Tocca per iniziare</button></div>
+
+<div id="menu" role="dialog" aria-label="Menu">
+  <div class="top">
+    <h1>Pixie Wisp</h1>
+    <button class="primary" id="back">Torna al wisp</button>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h2>Prova le reazioni</h2>
+      <div class="row">
+        <button data-cmd="crucio">Crucio</button>
+        <button data-cmd="stop">Stop</button>
+        <button data-cmd="ciao">Ciao</button>
+      </div>
+      <div class="row"><span class="label">Schermo sempre acceso</span><span class="status" id="st-wake">…</span></div>
+    </div>
+
+    <div class="card">
+      <h2>Telecomando Bluetooth</h2>
+      <div class="row">
+        <span class="label">Usa un telecomando<br><span class="hint">deve funzionare come una tastiera Bluetooth (si collega da Impostazioni → Bluetooth)</span></span>
+        <label class="switch"><input type="checkbox" id="remote-on"><span></span></label>
+      </div>
+      <div id="remote-box">
+        <div id="map"></div>
+        <p class="hint">Premi «Assegna tasto» e poi il tasto del telecomando che deve far partire l'azione.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Comandi vocali (sperimentale)</h2>
+      <div class="row">
+        <span class="label">Ascolta «Crucio», «Echo Insania», «Stop», «Ciao»<br><span class="hint">in Safari l'ascolto può fermarsi da solo e con una cassa Bluetooth l'audio può finire sull'altoparlante dell'iPad. Acceso, compare il pallino arancione.</span></span>
+        <label class="switch"><input type="checkbox" id="voice-on"><span></span></label>
+      </div>
+      <div class="row"><span class="label">Microfono</span><span class="status" id="st-mic">Spento</span></div>
+      <div class="row">
+        <span class="label">Copri l'angolo del pallino<br><span class="hint">la creatura non ci passa e l'angolo resta nero, per il nastro</span></span>
+        <label class="switch"><input type="checkbox" id="zone-on"><span></span></label>
+      </div>
+      <div id="zone-box">
+        <div class="row"><span class="label">Angolo</span>
+          <div class="seg" id="zone-corner"><button data-v="tl">↖</button><button data-v="tr">↗</button><button data-v="bl">↙</button><button data-v="br">↘</button></div>
+        </div>
+        <div class="row"><button id="zone-show">Mostra dove mettere il nastro</button></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Prima di chiudere il box</h2>
+      <ol class="hint">
+        <li>Safari → Condividi → <b>Aggiungi alla schermata Home</b>, poi apri Pixie Wisp da lì (tutto schermo, niente barre).</li>
+        <li>Collega la cassa Bluetooth e alza il volume.</li>
+        <li>Centro di Controllo: <b>Non disturbare</b> acceso e <b>blocco rotazione</b> in orizzontale.</li>
+        <li>Impostazioni → Schermo e luminosità → Blocco automatico: <b>Mai</b>.</li>
+        <li>Impostazioni → Accessibilità → <b>Accesso guidato</b> acceso; nell'app premi 3 volte il tasto laterale per bloccarla.</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<div id="learn">
+  <p id="learn-text">Premi un tasto sul telecomando…</p>
+  <button id="learn-cancel">Annulla</button>
+</div>
+
+<script src="lament.js"></script>
+<script src="voice.js"></script>
+<script src="engine.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const ACTIONS = [['crucio', 'Crucio'], ['stop', 'Stop'], ['ciao', 'Ciao']];
+  const load = (k, d) => { try { const v = localStorage.getItem('pw-' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
+  const save = (k, v) => { try { localStorage.setItem('pw-' + k, JSON.stringify(v)); } catch (e) {} };
+  const cfg = {
+    remote: load('remote', false),     // telecomando: SOLO se attivato
+    keys: load('keys', {}),            // tasto -> { action, name }
+    voice: load('voice', false),       // voce: spenta di base in Safari
+    zone: load('zone', { on: false, corner: 'tr' })
+  };
+
+  // ---- creatura
+  Wisp.start($('cv'));
+  let lastCmd = '', lastAt = 0;
+  const run = (cmd) => {
+    const now = Date.now();
+    if (cmd === lastCmd && now - lastAt < 1500) return;
+    lastCmd = cmd; lastAt = now;
+    Wisp.command(cmd);
+  };
+
+  // ---- schermo sempre acceso (Safari 16.4+)
+  let wake = null;
+  const keepAwake = async () => {
+    try { if ('wakeLock' in navigator && !wake && document.visibilityState === 'visible') { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; }); } } catch (e) { wake = null; }
+    status();
+  };
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { keepAwake(); Wisp.resume(); if (cfg.voice) startVoice(); } else Wisp.pause(); });
+
+  // ---- avvio: un tocco sblocca l'audio
+  $('go').onclick = () => {
+    Wisp.unlockAudio();
+    $('start').remove();
+    keepAwake();
+    if (cfg.voice) startVoice();
+  };
+
+  // ---- menu: doppio tap
+  const menu = $('menu');
+  const isOpen = () => menu.classList.contains('open');
+  const openMenu = () => { menu.classList.add('open'); status(); renderMap(); };
+  const closeMenu = () => { menu.classList.remove('open'); stopLearn(); };
+  let tapT = 0, tapX = 0, tapY = 0;
+  $('cv').addEventListener('pointerdown', (e) => {
+    Wisp.unlockAudio();
+    const now = performance.now();
+    if (now - tapT < 350 && Math.hypot(e.clientX - tapX, e.clientY - tapY) < 60) { tapT = 0; openMenu(); return; }
+    tapT = now; tapX = e.clientX; tapY = e.clientY;
+  });
+  $('back').onclick = closeMenu;
+  document.querySelectorAll('[data-cmd]').forEach((b) => { b.onclick = () => { closeMenu(); lastCmd = ''; run(b.dataset.cmd); }; });
+
+  // ---- telecomando (tastiera Bluetooth)
+  const KEYNAMES = { ' ': 'Spazio', Enter: 'Invio', ArrowUp: 'Su', ArrowDown: 'Giù', ArrowLeft: 'Sinistra', ArrowRight: 'Destra',
+    PageUp: 'Pagina su', PageDown: 'Pagina giù', Escape: 'Esc', Tab: 'Tab', Backspace: 'Cancella',
+    MediaPlayPause: 'Play/Pausa', MediaTrackNext: 'Avanti', MediaTrackPrevious: 'Indietro', AudioVolumeUp: 'Volume +', AudioVolumeDown: 'Volume −' };
+  const keyName = (e) => KEYNAMES[e.key] || (e.key && e.key.length === 1 ? e.key.toUpperCase() : (e.key || e.code));
+  let learning = null;
+  const startLearn = (action, label) => { learning = action; $('learn-text').textContent = 'Premi sul telecomando il tasto per «' + label + '»…'; $('learn').classList.add('open'); };
+  const stopLearn = () => { learning = null; $('learn').classList.remove('open'); };
+  $('learn-cancel').onclick = stopLearn;
+  window.addEventListener('keydown', (e) => {
+    if (e.repeat) return;
+    const code = e.code || e.key;
+    if (learning) {
+      e.preventDefault();
+      cfg.keys[code] = { action: learning, name: keyName(e) };
+      save('keys', cfg.keys); stopLearn(); renderMap(); return;
+    }
+    if (!cfg.remote) return;
+    const k = cfg.keys[code];
+    if (k && !isOpen()) { e.preventDefault(); lastCmd = ''; run(k.action); }
+  });
+  const renderMap = () => {
+    const box = $('map'); box.innerHTML = '';
+    for (const [act, label] of ACTIONS) {
+      const row = document.createElement('div'); row.className = 'row';
+      const l = document.createElement('span'); l.className = 'label'; l.textContent = label; row.appendChild(l);
+      for (const code in cfg.keys) {
+        if (cfg.keys[code].action !== act) continue;
+        const c = document.createElement('span'); c.className = 'chip'; c.textContent = cfg.keys[code].name;
+        const x = document.createElement('button'); x.textContent = '×'; x.setAttribute('aria-label', 'Togli ' + cfg.keys[code].name);
+        x.onclick = () => { delete cfg.keys[code]; save('keys', cfg.keys); renderMap(); };
+        c.appendChild(x); row.appendChild(c);
+      }
+      const add = document.createElement('button'); add.className = 'small'; add.textContent = 'Assegna tasto';
+      add.onclick = () => startLearn(act, label); row.appendChild(add);
+      box.appendChild(row);
+    }
+    $('remote-box').classList.toggle('off', !cfg.remote);
+  };
+  $('remote-on').checked = !!cfg.remote;
+  $('remote-on').onchange = (e) => { cfg.remote = e.target.checked; save('remote', cfg.remote); renderMap(); };
+
+  // ---- voce (Safari: webkitSpeechRecognition)
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let rec = null, micState = 'off', restartT = null;
+  const startVoice = () => {
+    if (!SR) { micState = 'none'; status(); return; }
+    if (rec) return;
+    try {
+      rec = new SR();
+      rec.lang = 'it-IT'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 3;
+      rec.onresult = (ev) => {
+        for (let i = ev.resultIndex; i < ev.results.length; i++) {
+          const r = ev.results[i];
+          for (let j = 0; j < r.length; j++) { const cmd = VoiceMatch.checkText(r[j].transcript); if (cmd) { run(cmd); return; } }
+        }
+      };
+      rec.onstart = () => { micState = 'on'; status(); };
+      rec.onerror = (ev) => { if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') { micState = 'denied'; cfg.voice = false; } status(); };
+      rec.onend = () => {
+        rec = null;
+        if (micState === 'on') micState = 'off';
+        if (cfg.voice) { clearTimeout(restartT); restartT = setTimeout(startVoice, 300); }  // riparte da solo
+        status();
+      };
+      rec.start();
+    } catch (e) { rec = null; micState = 'off'; status(); }
+  };
+  const stopVoice = () => { clearTimeout(restartT); if (rec) { try { rec.abort(); } catch (e) {} } rec = null; micState = 'off'; status(); };
+  $('voice-on').checked = !!cfg.voice;
+  $('voice-on').onchange = (e) => { cfg.voice = e.target.checked; save('voice', cfg.voice); if (cfg.voice) startVoice(); else stopVoice(); };
+
+  // ---- angolo coperto
+  let zoneShowUntil = 0;
+  const pushZone = () => Wisp.setZone({ on: !!cfg.zone.on, corner: cfg.zone.corner, w: 72, h: 46, show: Date.now() < zoneShowUntil });
+  const segs = () => {
+    document.querySelectorAll('#zone-corner button').forEach((b) => b.classList.toggle('on', b.dataset.v === cfg.zone.corner));
+    $('zone-box').classList.toggle('off', !cfg.zone.on);
+  };
+  $('zone-on').checked = !!cfg.zone.on;
+  $('zone-on').onchange = (e) => { cfg.zone.on = e.target.checked; save('zone', cfg.zone); pushZone(); segs(); };
+  document.querySelectorAll('#zone-corner button').forEach((b) => { b.onclick = () => { cfg.zone.corner = b.dataset.v; save('zone', cfg.zone); pushZone(); segs(); }; });
+  $('zone-show').onclick = () => { zoneShowUntil = Date.now() + 10000; pushZone(); closeMenu(); setTimeout(pushZone, 10050); };
+  segs(); pushZone();
+
+  // ---- stato nel menu
+  const setStatus = (el, text, ok) => { el.textContent = text; el.className = 'status ' + (ok ? 'ok' : 'warn'); };
+  const status = () => {
+    setStatus($('st-wake'), wake ? 'Attivo' : ('wakeLock' in navigator ? 'Non attivo' : 'Imposta Blocco automatico: Mai'), !!wake);
+    const m = { on: 'In ascolto', off: cfg.voice ? 'In ripartenza' : 'Spento', denied: 'Permesso negato', none: 'Non disponibile in questo browser' }[micState];
+    setStatus($('st-mic'), m, micState === 'on');
+  };
+  status();
+})();
+</script>
+</body>
+</html>

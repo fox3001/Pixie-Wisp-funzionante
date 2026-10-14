@@ -39,6 +39,16 @@ La versione da installare sul telefono è nella cartella `android/`: è la creat
 **Scaricare l'APK:** ad ogni modifica GitHub lo compila da solo (Actions → "APK") e lo pubblica
 nella release **"Pixie Wisp — ultima versione"** della repo: dal telefono si apre la release e si scarica `PixieWisp.apk`.
 
+## iPad / Safari
+
+La stessa creatura gira anche nel browser: **https://fox3001.github.io/Pixie-Wisp-funzionante/**
+(il sito si aggiorna da solo ad ogni modifica, con la cartella `web/` e il motore dell'app Android).
+
+- Da Safari: Condividi → *Aggiungi alla schermata Home*, poi si apre da lì a tutto schermo.
+- Al primo avvio un tocco ("Tocca per iniziare") sblocca l'audio. Doppio tap: menu.
+- Telecomando: deve funzionare come tastiera Bluetooth. Voce: sperimentale e spenta di base.
+- Silenzio, blocco rotazione, schermo sempre acceso e Accesso guidato si impostano sull'iPad (istruzioni nel menu).
+
 ## I file
 
 ```

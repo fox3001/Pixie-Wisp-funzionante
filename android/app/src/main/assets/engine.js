@@ -409,7 +409,7 @@ class Component extends DCLogic {
       self._play('ciao');
     };
     const enterStop = () => {
-      S.mode = 'stop'; S.t = 0; S.tint0 = S.tint; S.sq0 = S.squint; S.blinks = 0;
+      S.mode = 'stop'; S.t = 0; S.tint0 = S.tint; S.sq0 = S.squint; S.xe0 = S.xeye || 0; S.blinks = 0;
       self._play('stop');
     };
     const enterExplode = () => {
@@ -581,13 +581,15 @@ class Component extends DCLogic {
         const rgc = rangeAt(C.z);
         C.x = clamp(C.x + rnd(-ax, ax) * f60, rgc.x0, rgc.x1);
         C.y = clamp(C.y + rnd(-ay, ay) * f60, rgc.y0, rgc.y1);
-        S.tint = Math.min(1, t / 5); S.squint = Math.pow(Math.min(1, t / 5), 1.3); // si chiudono piano piano fino al secondo 5
+        S.tint = Math.min(1, t / 5); S.squint = Math.pow(Math.min(1, t / 3.7), 1.3); // si chiudono piano piano
+        // poi diventano due ">  <" strizzati: pieni da 1.3 secondi prima dell'esplosione
+        S.xeye = smoothst(2.3, 3.7, t);
         S.pulse = 1 + 0.06 * Math.sin(60 * t);
         if (t >= 5) enterExplode();
       } else if (S.mode === 'stop') {
         C.vx = 0; C.vy = 0;
         const k = Math.max(0, 1 - S.t / 2);
-        S.tint = S.tint0 * k; S.squint = S.sq0 * k;
+        S.tint = S.tint0 * k; S.squint = S.sq0 * k; S.xeye = (S.xe0 || 0) * Math.max(0, 1 - S.t / 0.9);
         if (S.blinks === 0 && S.t >= 0.6) { S.blinkT = BL; S.blinks = 1; }
         else if (S.blinks === 1 && S.t >= 1.3) { S.blinkT = BL; S.blinks = 2; }
         if (S.t >= 2) { S.mode = 'normal'; S.t = 0; S.tint = 0; S.squint = 0; pickBehavior(); }
@@ -1577,6 +1579,21 @@ class Component extends DCLogic {
             }
             return out;
           };
+          // occhio strizzato ">" (o "<"): due braccia che partono dalla punta, rivolta verso il centro del viso,
+          // leggermente curve, spesse e con le estremita' arrotondate
+          const chevPts = () => {
+            const d = e.x < C.x ? 1 : -1, kx = Math.max(0.35, e.rw / er), arms = [];
+            for (const sg of [-1, 1]) {
+              const out = [];
+              for (let i = 0; i <= 14; i++) {
+                const t = i / 14;
+                const bx = 0.5 - 1.45 * t, by = sg * (0.62 * t + 0.1 * Math.sin(Math.PI * t));
+                out.push({ x: e.x + bx * er * d * kx, y: e.y + by * er, w: er * 0.52 * (1 - 0.2 * t) });
+              }
+              arms.push(out);
+            }
+            return arms;
+          };
           // riempie la pennellata con spessore variabile (mul = quanto piu' larga)
           const fillStroke = (pts, mul) => {
             const L = [], Rr = [];
@@ -1610,17 +1627,31 @@ class Component extends DCLogic {
               }
               return;
             }
+            const xe = (S.mode === 'crucio' || S.mode === 'stop') ? (S.xeye || 0) : 0;
             const cl = e.cl || 0;
+            if (xe > 0.01) {
+              // crucio: occhi strizzati a ">  <", pennellate spesse con le punte verso il centro del viso,
+              // negli stessi colori del saluto (bianco con il bordo azzurro), non arrossati
+              const edC = dk || [200, 235, 255];
+              for (const arm of chevPts()) {
+                for (const st of [[2.2, 0.14, edC], [1.5, 0.4, edC], [1, 1, dk || [255, 255, 255]]]) {
+                  ctx.globalAlpha = vA * st[1] * xe; ctx.fillStyle = 'rgb(' + c3(st[2]) + ')';
+                  fillStroke(arm, st[0] * sh);
+                  const q = arm[arm.length - 1]; ctx.beginPath(); ctx.arc(q.x, q.y, q.w * st[0] * sh / 2, 0, Math.PI * 2); ctx.fill();
+                }
+              }
+              if (xe > 0.99) return;
+            }
             if (cl > 0.01) {
               // occhio chiuso: pennellata delle ciglia ad arco verso il basso, assottigliata alle punte
               const lp = lashPts();
               for (const st of [[2.2, 0.14, ed], [1.5, 0.4, ed], [1, 1, dk || [255, 255, 255]]]) {
-                ctx.globalAlpha = vA * st[1] * cl; ctx.fillStyle = 'rgb(' + c3(st[2]) + ')';
+                ctx.globalAlpha = vA * st[1] * cl * (1 - xe); ctx.fillStyle = 'rgb(' + c3(st[2]) + ')';
                 fillStroke(lp, st[0] * sh);
               }
               if (cl > 0.99) return;
             }
-            const vO = vA * (1 - cl);
+            const vO = vA * (1 - cl) * (1 - xe);
             const kx = Math.max(0.05, e.rw / er) * sh, ky = Math.max(0.03, e.rh / er) * (2 - sh);
             const R1 = er * 1.12;
             ctx.save();

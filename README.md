@@ -35,7 +35,7 @@ la "forma" e non è una parola italiana comune simile (*intendo, Asia, finito, p
 
 La versione da installare sul telefono è nella cartella `android/`: è la creatura del mockup Claude Design
 `design/CorpoScintille.dc.html` (pagina `android/app/src/main/assets/`) dentro un'app Android nativa.
-Il motore `engine.js` si rigenera dal mockup con `python3 tools/build_engine.py design/CorpoScintille.dc.html android/app/src/main/assets/engine.js`.
+Il motore `engine.js` si rigenera dal mockup con `python3 tools/build_engine.py design/CorpoScintille.dc.html android/app/src/main/assets/engine.js "occhi=maschera noBK"`.
 
 - Si apre a schermo intero, sopra la schermata di blocco, con lo schermo sempre acceso.
 - Mentre è aperta: **silenzio totale** (niente notifiche, chiamate o suoni del telefono, serve autorizzarlo una volta)

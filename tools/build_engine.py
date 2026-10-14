@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Rigenera android/app/src/main/assets/engine.js dal mockup CorpoScintille.dc.html.
-Uso: python3 tools/build_engine.py design/CorpoScintille.dc.html android/app/src/main/assets/engine.js"""
+Uso: python3 tools/build_engine.py design/CorpoScintille.dc.html android/app/src/main/assets/engine.js "occhi=maschera noBK"
+"""
 import sys, re, html, json
 
 src, out = sys.argv[1], sys.argv[2]
@@ -165,6 +166,10 @@ assert '380' not in re.sub(r'Math.min\(380', '', code), [l for l in code.split('
 P = {k: v.get('default') for k, v in props.items() if not k.startswith('$')}
 for k in ('saluta', 'crucio', 'finite', 'incendio', 'gelatina', 'accio', 'vieni'):
     P[k] = False
+# scelte fisse per l'app (gli altri valori restano quelli dei Tweaks): occhi=... corpo=...
+for kv in sys.argv[3:]:
+    k, v = kv.split('=', 1)
+    P[k] = v
 head = """// Pixie Wisp - motore della creatura (Canvas 2D), estratto dal mockup "CorpoScintille" (Claude Design).
 // Generato da build_engine.py: non modificare a mano, si rigenera dal mockup.
 // Logica in coordinate 760x440 (l'altezza resta 440, la larghezza segue lo schermo).

@@ -366,7 +366,7 @@ class Component extends DCLogic {
     };
     const enterFx = (kind) => {
       if (kind === 'gelatina') { S.purpT = 1; S.gflash = 1; self._play('zap'); }
-      Object.assign(S, { cut: 0, mode: kind, t: 0, sayIn: 0.4, bx: C.x, by: C.y, bz: C.z, f1: 0, f2: 0, f3: 0, f4: 0, runT: 0, squint: 0, blinkT: 0, smile: false, tsx: 1, tsy: 1, tgt: null, stir: 0, ang: 0 });
+      Object.assign(S, { zg: null, cut: 0, mode: kind, t: 0, sayIn: 0.4, bx: C.x, by: C.y, bz: C.z, f1: 0, f2: 0, f3: 0, f4: 0, runT: 0, squint: 0, blinkT: 0, smile: false, tsx: 1, tsy: 1, tgt: null, stir: 0, ang: 0 });
       C.shx = 0; C.shy = 0; Bh.kind = 'face'; Bh.t = 0;
     };
     const endFx = () => {
@@ -710,21 +710,26 @@ class Component extends DCLogic {
         }
       } else if (S.mode === 'accio') {
         // ACCIO: viene tirato contro il vetro davanti, ci si spiaccica, cola un po', si stacca come gomma
-        const t = S.t, Zg = -80;
+        // sul vetro diventa grande il doppio di com'era, ma il corpo (con lo schiacciamento) resta SEMPRE dentro lo schermo
+        const EB = 1.0;    // mezza altezza della parte luminosa del corpo (con le fiammelle in cima), in R
+        if (S.zg == null) {
+          const kWant = 2 * scaleAt(S.bz), kFit = Math.min((LH / 2 - 8) / (R * EB * 1.12), (LW / 2 - 8) / (R * EB * 1.55));
+          S.zg = FOC / Math.min(kWant, kFit) - FOC;
+        }
+        const t = S.t, Zg = S.zg;
         S.sayIn -= dt;
         S.flash = Math.max(0, S.flash - dt * 3);
         if (t < 0.3) {
           if (!S.f1) { S.f1 = 1; self._play('whoosh'); }
           const k = Math.pow(smoothst(0, 0.3, t), 2);
-          C.z = S.bz + (Zg - S.bz) * k; C.x = S.bx + (clamp(S.bx, VX - 140, VX + 140) - S.bx) * k; C.y = S.by + (VY - 45 - S.by) * k;
+          C.z = S.bz + (Zg - S.bz) * k; C.x = S.bx + (VX + (S.bx - VX) * 0.3 - S.bx) * k; C.y = S.by + (VY - S.by) * k;
           S.eyeBigT = 1.3; S.browT = -0.8; C.turnT = 0; C.pitchT = 0;
-          S.tsx = 0.85; S.tsy = 1.15; spring(260, 14, dt);
+          S.tsx = 0.9; S.tsy = 1.06; spring(260, 14, dt);
         } else if (t < 2.7) {
           if (!S.f2) { S.f2 = 1; self._play('splat'); S.flash = 1; S.vsx = 7; S.vsy = 5; S.smear = { x: C.x, y0: C.y, y1: C.y, z: Zg, a: 1 }; }
           C.z = Zg;
-          S.tsx = 1.38; S.tsy = 1.2; spring(240, 9, dt);
-          const dS0 = scaleAt(Zg), yMax = VY + (LH - 8 - VY) / dS0 - R * BODY * S.spy;
-          C.y = Math.min(yMax, C.y + 30 * dt * smoothst(0.5, 1.1, t));
+          S.tsx = 1.38; S.tsy = 1.0; spring(240, 9, dt);
+          C.y += 30 * dt * smoothst(0.5, 1.1, t);   // cola un po' (il limite in basso lo mette fitAccio)
           S.smear.y1 = C.y;
           S.squint = 0.4; S.eyeBigT = 1.15; S.browT = -0.3;
           if (t > 1.5 && !S.f3) { S.f3 = 1; say('whine'); }
@@ -745,6 +750,17 @@ class Component extends DCLogic {
           C.shx = 0; C.shy = 0; C.turnT = 0; S.squint = 0.3; S.browT = 1; S.eyeBigT = 1;
           if (S.sayIn <= 0) { say('angry'); S.sayIn = rnd(0.8, 1.1); }
         } else endFx();
+        if (S.mode === 'accio') {
+          // mai fuori dai bordi: se con lo schiacciamento sarebbe troppo grande arretra un poco, poi lo tiene dentro
+          // in volo la scia e le fiammelle salgono piu' in alto: margine piu' largo
+          const fly = 1 + 0.15 * smoothst(0, 0.12, t) * (1 - smoothst(0.3, 0.45, t));
+          const hx = R * EB * Math.max(1, S.spx), hy = R * EB * Math.max(1, S.spy) * fly;
+          const sMax = Math.min((LH / 2 - 6) / hy, (LW / 2 - 6) / hx);
+          if (scaleAt(C.z) > sMax) C.z = FOC / sMax - FOC;
+          const sC = scaleAt(C.z), lx = Math.max(0, (LW / 2 - 6) / sC - hx), ly = Math.max(0, (LH / 2 - 6) / sC - hy);
+          C.x = clamp(C.x, VX - lx, VX + lx); C.y = clamp(C.y, VY - ly, VY + ly);
+          if (S.smear) { S.smear.x = clamp(S.smear.x, VX - lx, VX + lx); S.smear.y1 = Math.min(S.smear.y1, C.y); S.smear.z = Math.max(S.smear.z, C.z); }
+        }
         if (S.smear && S.mode === 'accio' && t > 2.7) S.smear.a = Math.max(0, S.smear.a - dt * 0.6);
       } else if (S.mode === 'vieni') {
         const t = S.t;
@@ -1465,7 +1481,7 @@ class Component extends DCLogic {
         // lampo dell'accensione in testa (incendio)
         if (S.hflash > 0.01) { blob([255, 230, 170], C.x, C.y - R * 0.95, R * 0.7, 0.6 * S.hflash * A); blob([255, 255, 255], C.x, C.y - R * 0.95, R * 0.25, 0.8 * S.hflash * A); }
         // lampo dell'impatto (accio)
-        if (S.flash > 0.01) blob([235, 250, 255], C.x, C.y, R * 1.6, 0.35 * S.flash * A);
+        if (S.flash > 0.01) blob([235, 250, 255], C.x, C.y, R * 0.95, 0.35 * S.flash * A);
         // Finite: un luccichio che annulla l'incantesimo
         if (S.sparkle > 0.01) { const g = S.sparkle; blob([200, 255, 245], C.x, C.y, R * (1 + 1.4 * (1 - g)), 0.4 * g * A); }
         // colpito dalla gelatina: lampo viola che si allarga

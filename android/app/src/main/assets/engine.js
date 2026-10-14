@@ -1526,7 +1526,6 @@ class Component extends DCLogic {
           // quanto e' chiuso: da 0 (aperto) a 1 (chiuso -> resta solo la pennellata delle ciglia)
           e.cl = Math.max(0, Math.min(1, (0.42 - rawH) / 0.27));
           ctx.globalCompositeOperation = 'lighter';
-          eblob(cM, e, 0, 0, 0.4 * Reff, 0.45 * e.vis * A);
           ctx.globalCompositeOperation = 'source-over';
           const sd = e.idx * 31.7;
           // alone blu mobile e molto sfumato dietro l'occhio (nessuna punta):
@@ -1694,26 +1693,37 @@ class Component extends DCLogic {
             ctx.restore();
           };
           // alone "maschera noBK": tono scuro del corpo con la STESSA forma dell'occhio (battito, palpebra, sorriso, crucio)
-          const haloNoBK = () => {
-            // e' la sagoma dell'occhio stesso (aperto, chiuso a ciglio, palpebra, sorriso), colorata scura e sfocata:
-            // la sagoma vera si disegna fuori dal riquadro e qui arriva solo la sua ombra morbida, senza bordi
-            const bc = mix3(col('outer', tint), AQUA.outer, 0.45 * (1 - tint) * (1 - (S.purp || 0)));
-            // non nero: lo stesso colore del corpo, solo piu' scuro e profondo
-            const dk = [bc[0] * 0.45, bc[1] * 0.45, bc[2] * 0.5], dks = 'rgb(' + dk.map(Math.round).join(',') + ')';
-            const m = ctx.getTransform ? ctx.getTransform() : { a: 1, b: 0, d: 1 }, dp = Math.sqrt(Math.abs(m.a * m.d - m.b * m.c)) || 1;
-            const OFF = (ctx.canvas ? ctx.canvas.width : 2000) / dp + er * 6;
-            // la sfocatura segue l'altezza dell'occhio: chiuso o stretto -> alone basso e allungato, mai un cerchio
-            const hk = S.smile ? 0.55 : Math.max(0.35, Math.min(1, (1 - (e.cl || 0)) * e.rh / er));
-            // [ingrandimento, sfocatura, intensita']
-            for (const ps of [[1.6, 1.4, 0.85], [1.3, 0.9, 0.8], [1.1, 0.5, 0.6]]) {
+          // bagliori e ombre dietro all'occhio: sempre con la forma dell'occhio bianco (cerchio, ciglio chiuso,
+          // palpebra, sorriso, ">  <"). E' la sagoma stessa ingrandita e sfocata: la sagoma vera si disegna
+          // fuori dal riquadro e qui arriva solo la sua ombra morbida, senza bordi.
+          // layers: [ingrandimento, sfocatura, intensita']
+          const shapeGlow = (c3, layers) => {
+            const cs = 'rgb(' + c3.map(Math.round).join(',') + ')';
+            const m = (ctx.getTransform && ctx.getTransform()) || { a: 1, b: 0, c: 0, d: 1 }, dp = Math.sqrt(Math.abs(m.a * m.d - m.b * m.c)) || 1;
+            const OFF = ((ctx.canvas && ctx.canvas.width) || 2000) / dp + er * 6;
+            const xeN = (S.mode === 'crucio' || S.mode === 'stop') ? (S.xeye || 0) : 0;
+            // forme sottili (ciglio chiuso, sorriso, ">  <"): alone stretto e poco sfocato, cosi' non diventa un pallino
+            const thin = S.smile ? 1 : Math.max(xeN, e.cl || 0);
+            const hk = Math.max(0.35, Math.min(1, e.rh / er)) * (1 - thin) + 0.45 * thin;
+            const bk = (0.4 + 0.6 * hk) * (1 - 0.55 * thin);
+            for (const ps of layers) {
               ctx.save();
-              ctx.translate(e.x + OFF, e.y); ctx.scale(ps[0], 1 + (ps[0] - 1) * hk); ctx.translate(-e.x, -e.y);
-              ctx.shadowColor = dks; ctx.shadowOffsetX = -OFF * m.a; ctx.shadowOffsetY = -OFF * (m.b || 0); ctx.shadowBlur = er * ps[1] * (0.4 + 0.6 * hk) * dp;
-              drawWhite(ec, dk, ps[2]);
+              ctx.translate(e.x + OFF, e.y); ctx.scale(1 + (ps[0] - 1) * (1 - 0.5 * thin), 1 + (ps[0] - 1) * hk * (1 - 0.5 * thin)); ctx.translate(-e.x, -e.y);
+              ctx.shadowColor = cs; ctx.shadowOffsetX = -OFF * m.a; ctx.shadowOffsetY = -OFF * (m.b || 0); ctx.shadowBlur = er * ps[1] * bk * dp;
+              drawWhite(ec, c3, ps[2]);
               ctx.restore();
             }
             ctx.shadowColor = 'rgba(0,0,0,0)'; ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
           };
+          const haloNoBK = () => {
+            const bc = mix3(col('outer', tint), AQUA.outer, 0.45 * (1 - tint) * (1 - (S.purp || 0)));
+            // non nero: lo stesso colore del corpo, solo piu' scuro e profondo
+            ctx.globalCompositeOperation = 'source-over';
+            shapeGlow([bc[0] * 0.45, bc[1] * 0.45, bc[2] * 0.5], [[1.6, 1.4, 0.85], [1.3, 0.9, 0.8], [1.1, 0.5, 0.6]]);
+          };
+          // bagliore chiaro dietro l'occhio (prima era un disco tondo)
+          ctx.globalCompositeOperation = 'lighter';
+          shapeGlow(cM, [[1.9, 1.3, 0.45 * e.vis * A / Math.max(0.01, va)]]);
           if (S.smile) {
             if (OV === 'maschera noBK') haloNoBK();
             // nel saluto anche l'alone prende la forma dell'arco: fondo scuro e bagliore lungo la mezzaluna
@@ -1755,7 +1765,7 @@ class Component extends DCLogic {
           } else if (OV === 'maschera noBK') {
             haloNoBK();
             ctx.globalCompositeOperation = 'lighter';
-            eblob(ecol, e, 0, 0, eb * 1.1, 0.8 * apH * va);
+            shapeGlow(ecol, [[1.25, 0.5, 0.8 * apH]]);
             drawWhite(ec);
           } else if (OV === 'ombra') {
             // ombra scura sotto ogni occhio: lo fa "staccare" dalla fiamma

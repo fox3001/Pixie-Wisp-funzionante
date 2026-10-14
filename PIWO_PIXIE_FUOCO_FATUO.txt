@@ -1,0 +1,284 @@
+==============================================================================
+                     PIWO PIXIE — FUOCO FATUO
+          una creatura di luce che vive dentro una scatola
+==============================================================================
+
+
+------------------------------------------------------------------------------
+1. COS'È
+------------------------------------------------------------------------------
+
+Piwo Pixie è un fuoco fatuo animato: una piccola fiamma azzurra viva, con due
+occhi bianchi di luce, che fluttua dentro una scatola buia. Si guarda intorno,
+gironzola, a volte scatta veloce, ogni tanto va a sbattere contro una parete e
+si scrolla, raramente si gira del tutto per guardarsi alle spalle.
+
+È pensata per un box "Pepper's ghost": lo schermo del telefono (o dell'iPad)
+è nascosto e la sua immagine si riflette su un vetro inclinato, così la
+creatura sembra sospesa a mezz'aria dentro la scatola, senza schermo.
+
+Reagisce alla voce e a un telecomando:
+
+  CRUCIO  (oppure "ECHO INSANIA")
+          soffre: si blocca, trema sempre più forte, diventa rossa e chiude
+          piano piano gli occhi; si lamenta. Se nessuno la ferma, dopo 5
+          secondi esplode. Dopo l'esplosione resta tutto buio per 5 secondi,
+          poi un "fiammifero" la riaccende.
+
+  STOP    se sta soffrendo si calma: torna azzurra e sbatte gli occhi due
+          volte. Se non sta soffrendo, rallenta e vola tranquilla.
+
+  CIAO    fa gli occhi sorridenti ad arco, ondeggia e fa un suono allegro.
+
+
+------------------------------------------------------------------------------
+2. I LINK (puntano sempre all'ultima versione)
+------------------------------------------------------------------------------
+
+  Android, la creatura
+  https://github.com/fox3001/Pixie-Wisp-funzionante/releases/download/apk-latest/PixieWisp.apk
+
+  Android, il telecomando (il telefono diventa un telecomando Bluetooth)
+  https://github.com/fox3001/Pixie-Wisp-funzionante/releases/download/apk-latest/PixieRemote.apk
+
+  iPad / Safari
+  https://fox3001.github.io/Pixie-Wisp-funzionante/
+
+  Codice sorgente
+  https://github.com/fox3001/Pixie-Wisp-funzionante
+
+
+------------------------------------------------------------------------------
+3. COME SI USA
+------------------------------------------------------------------------------
+
+3.1  ANDROID (PixieWisp.apk)
+
+  Installazione
+  - Scarica PixieWisp.apk dal telefono e aprilo. La prima volta Android chiede
+    di permettere l'installazione da "fonti sconosciute": va concesso.
+  - Le nuove versioni si installano sopra la vecchia, senza disinstallare.
+
+  Primo avvio
+  - Permesso del microfono: sì (serve per i comandi vocali).
+  - Si apre da sola la pagina "Accesso a Non disturbare": attiva Pixie Wisp.
+    Serve per il "silenzio totale".
+  - Android chiede se fissare l'app sullo schermo: conferma.
+
+  Cosa fa da sola
+  - Schermo intero, sopra la schermata di blocco, schermo sempre acceso.
+  - Silenzio totale mentre è aperta: niente notifiche, chiamate, suoni del
+    telefono. I suoni della creatura invece si sentono (anche su cassa
+    Bluetooth). Quando esci, il telefono torna com'era.
+  - App fissata: Home e app recenti non la chiudono.
+  - Nessuna scritta sullo schermo: solo la creatura su nero puro.
+  - Orientamento orizzontale bloccato (col telefono steso nel box
+    l'immagine non gira da sola).
+
+  Menu: DOPPIO TAP sullo schermo
+  - Torna al wisp                 (il pulsante grande in alto)
+  - Prova le reazioni             Crucio, Stop, Ciao
+  - Telecomando Bluetooth         SOLO se attivato: collega un dispositivo,
+                                  assegna i tasti alle azioni (anche più tasti
+                                  per azione). I tasti 1, 2, 3 sono già
+                                  assegnati a Crucio, Stop, Ciao.
+  - Box Pepper's ghost            angolo coperto (vedi 3.4), schermo capovolto
+  - Tutto in secondo piano        stato del silenzio totale, app fissata
+  - Esci dall'app
+  Il tasto Indietro chiude il menu, non l'app.
+
+3.2  IPAD / SAFARI (sito)
+
+  - Apri il link in Safari, poi Condividi → "Aggiungi alla schermata Home".
+    Da lì si apre a tutto schermo, senza barre.
+  - Al primo avvio un tocco su "Tocca per iniziare" (Safari lo pretende per
+    attivare l'audio). Poi doppio tap = menu, come su Android.
+  - Il telecomando funziona se si presenta come tastiera Bluetooth (per
+    esempio l'app Pixie Remote, vedi 3.3). I tasti 1, 2, 3 sono già assegnati.
+  - La voce in Safari è sperimentale e spenta di base: l'ascolto può fermarsi
+    da solo e, con una cassa Bluetooth, l'audio può finire sull'altoparlante
+    dell'iPad. Per il box: telecomando sì, voce no.
+  - Da impostare sull'iPad prima di chiudere il box (c'è anche nel menu):
+      Non disturbare acceso, blocco rotazione in orizzontale,
+      Blocco automatico: Mai, Accesso guidato (triplo clic sul tasto laterale).
+
+3.3  PIXIE REMOTE (PixieRemote.apk) — il telefono come telecomando
+
+  Il telefono si presenta come una TASTIERA Bluetooth con tre pulsanti
+  grandi: Crucio (tasto 1), Stop (tasto 2), Ciao (tasto 3).
+  Serve Android 9 o più recente.
+
+  Collegarlo all'iPad
+  1. Sull'iPad apri Impostazioni → Bluetooth e lascia la pagina aperta.
+  2. In Pixie Remote tocca "Cerca l'iPad", toccalo nella lista e conferma il
+     codice su tutti e due.
+  3. In alto compare in verde "Collegato a …".
+  4. Nella pagina Pixie Wisp (doppio tap → menu) attiva "Usa un telecomando".
+  Le volte dopo si ricollega da solo all'ultimo dispositivo.
+
+  Funziona allo stesso modo con l'app Pixie Wisp su un altro telefono Android.
+
+3.4  IL PALLINO DEL MICROFONO E IL BOX
+
+  Quando un'app usa il microfono, Android (da 12) e iPad mostrano un pallino
+  colorato in un angolo. Nessuna app può nasconderlo, spostarlo o cambiarne il
+  colore. Nel box Pepper's ghost però il nero non si riflette, quindi:
+
+  - Menu → "Copri l'angolo del microfono": la creatura non entra mai in quel
+    angolo (nemmeno col bagliore) e l'angolo resta nero pieno, sfumato.
+  - "Mostra dove mettere il nastro" disegna per 10 secondi il riquadro.
+  - Su quel riquadro si mette un pezzetto di nastro isolante nero opaco.
+    Nel riflesso non si vede niente: né il nastro né il pallino.
+
+  Se il microfono non serve (comandi solo da telecomando), il pallino non
+  compare proprio.
+
+3.5  CONSIGLI PER IL BOX
+
+  - Tieni il microfono del telefono verso chi dà i comandi: con il vociare di
+    fondo il filtro evita i falsi allarmi, ma il rumore rende più difficile
+    capire la parola giusta. Il telecomando è la riserva sicura.
+  - La cassa Bluetooth non troppo vicina al telefono, così i suoni della
+    creatura non rientrano nel microfono.
+  - Luminosità al massimo: il vetro riflette solo una parte della luce.
+
+
+------------------------------------------------------------------------------
+4. IL PROCESSO CREATIVO
+------------------------------------------------------------------------------
+
+L'idea: un fantasma vero, in una scatola
+
+Tutto parte dal Pepper's ghost, il trucco teatrale dell'Ottocento: una
+lastra di vetro inclinata riflette una figura illuminata e nascosta allo
+sguardo, e il pubblico vede un fantasma trasparente in mezzo alla scena.
+L'idea era di portarlo in piccolo: una scatola buia con un vetro a 45 gradi
+e sotto, nascosto, uno schermo. Ma che cosa far apparire?
+
+Un fantasma "persona" era troppo ovvio. Serviva qualcosa che nel riflesso
+diventasse magico proprio perché fatto di luce: il fuoco fatuo, la fiammella
+che nelle leggende appare nelle paludi e attira i viandanti. Una creatura
+che fosse luce pura, così da sembrare davvero sospesa nell'aria. Ci voleva
+anche una personalità, per farla sembrare viva: due occhi, e la capacità di
+reagire alle persone che le parlano.
+
+Da qui il nome, Piwo Pixie, e le tre parole a cui risponde: un saluto
+("ciao"), una maledizione per farla soffrire ("crucio", e in seguito anche
+"echo insania") e la parola per salvarla ("stop").
+
+Il primo prototipo
+
+La prima versione è stata un'app Android scritta in Python con Kivy: un
+wisp disegnato con cerchi sfumati, che ascoltava il microfono di continuo e
+reagiva ai tre comandi. Funzionava, ma la luce sembrava fatta a quadretti e
+la creatura era più un cartone animato che una fiamma.
+
+Riprogettare la fiamma
+
+Si è ripartiti dai mockup, lavorando solo sull'aspetto, una prova alla volta:
+- la luce "quadrettata" è diventata una fiamma morbida, fatta di centinaia
+  di macchie di luce sfumate (gaussiane) sommate tra loro;
+- il corpo è diventato una "fiamma viva" di piccole fiammelle che nascono,
+  salgono, si torcono e svaniscono, con un passaggio graduale dall'azzurro
+  chiaro al blu e un velo di fumo;
+- gli occhi sono passati per tante versioni (aloni neri, fiamme blu, anelli,
+  ombre) fino a due luci bianche rotonde, che non sembrano disegnate ma
+  accese; il loro bagliore segue SEMPRE la forma dell'occhio, anche quando
+  si chiude o si stringe in prospettiva;
+- nel saluto gli occhi diventano due archi sorridenti tracciati come una
+  pennellata.
+
+Dare un corpo alla luce
+
+Poi la creatura ha preso fisicità:
+- la scatola ha una profondità (pari al lato corto dello schermo) e la
+  creatura ci si muove dentro in prospettiva: quando va in fondo diventa più
+  piccola tutta insieme, occhi, fumo e aloni compresi;
+- è fatta di "ectoplasma": sembra luce ma è solida. Contro le pareti si
+  schiaccia come una gelatina, e anche il fumo si infrange sulle pareti
+  invece di uscire;
+- il movimento è casuale ma con un carattere: momenti calmi, brevi scatti,
+  sguardi in giro, sguardi verso chi la osserva, rari urti contro una parete
+  (chiude gli occhi e si scrolla) e, ancora più di rado, una giravolta per
+  guardarsi alle spalle.
+
+La sofferenza
+
+Il crucio è diventato la scena madre: la creatura si blocca, trema sempre
+di più, vira al rosso e chiude gli occhi lentamente, come se soffrisse
+davvero, fino al quinto secondo, quando esplode. Gli occhi chiusi non
+spariscono: restano una linea spessa di luce. Il lamento è quello originale
+del primo prototipo.
+
+Dal mockup all'app
+
+Quando l'aspetto era quello giusto, il motore del mockup è diventato l'app
+vera: un'app Android nativa che mostra la creatura a tutto schermo e mette
+tutto il resto del telefono in secondo piano (silenzio, app fissata, niente
+scritte). La scena si adatta a qualunque schermo senza deformare la
+creatura: l'altezza resta fissa, la larghezza si allunga.
+
+I problemi del mondo reale
+
+Portarla nel box ha fatto emergere problemi nuovi, risolti uno alla volta:
+- il riconoscimento vocale scambiava per "crucio" parole come "grazie" o
+  "musica": ora ogni comando deve avere la sua "forma" e le parole italiane
+  comuni sono escluse (da circa il 94% di frasi casuali che facevano scattare
+  qualcosa a 9 su 20.000);
+- il pallino verde del microfono, che nessuna app può nascondere, rovinava
+  l'illusione: la creatura ora evita quell'angolo, che resta nero e si copre
+  con il nastro, invisibile nel riflesso;
+- il telefono steso nel box girava l'immagine da solo: ora l'orientamento è
+  bloccato;
+- per l'iPad è nata la versione per Safari e, siccome lì la voce non è
+  affidabile con una cassa Bluetooth, la mini app Pixie Remote, che
+  trasforma un telefono Android in un telecomando.
+
+
+------------------------------------------------------------------------------
+5. COM'È FATTO (per chi mette le mani nel codice)
+------------------------------------------------------------------------------
+
+  android/app/                 app Android "Pixie Wisp" (Java + WebView)
+    src/main/java/.../MainActivity.java
+                               schermo intero, silenzio totale, app fissata,
+                               ascolto vocale continuo, tasti del telecomando
+    src/main/assets/engine.js  il motore della creatura (Canvas 2D)
+    src/main/assets/voice.js   riconoscimento dei comandi dal testo
+    src/main/assets/lament.js  il lamento originale (MP3 in base64)
+    src/main/assets/index.html pagina a tutto schermo + menu
+
+  android/remote/              mini app "Pixie Remote" (tastiera Bluetooth)
+
+  web/                         versione per iPad/Safari (usa gli stessi
+                               engine.js, voice.js, lament.js dell'app)
+
+  main.py, embedded_audio.py,  il primo prototipo in Python/Kivy
+  java/, buildozer.spec        (non più usato per l'APK)
+
+  .github/workflows/apk.yml    a ogni modifica compila PixieWisp.apk e
+                               PixieRemote.apk e li pubblica nella release
+                               "apk-latest"
+  .github/workflows/pages.yml  a ogni modifica pubblica il sito per l'iPad
+
+  La creatura è disegnata in coordinate logiche alte 440 unità; la larghezza
+  segue lo schermo. Tutto è in luce additiva su nero puro, che è ciò che
+  serve al Pepper's ghost.
+
+
+------------------------------------------------------------------------------
+6. LIMITI NOTI
+------------------------------------------------------------------------------
+
+  - Il pallino del microfono non si può togliere via software (Android 12+,
+    iPad): si copre con l'angolo nero + nastro.
+  - Su alcuni telefoni la schermata di una chiamata può comparire lo stesso,
+    ma senza squillare.
+  - Su alcuni telefoni il microfono fa un piccolo "bip" quando l'ascolto
+    riparte.
+  - Su iPad il silenzio, il blocco dell'app e lo schermo sempre acceso si
+    impostano a mano (vedi 3.2).
+  - Pixie Remote richiede un telefono che accetti di fare da tastiera
+    Bluetooth (quasi tutti da Android 9 in poi).
+
+==============================================================================

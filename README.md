@@ -1,5 +1,7 @@
 # Pixie Wisp 🔵✨
 
+> Spiegazione completa (cos'è, come si usa, processo creativo): **[PIWO_PIXIE_FUOCO_FATUO.txt](PIWO_PIXIE_FUOCO_FATUO.txt)**
+
 Un **fuoco fatuo animato** (una lucina azzurra con due occhi) che vola sullo schermo del telefono e **reagisce alla voce**.
 App Android fatta in Python con [Kivy](https://kivy.org), versione **3.4.0**.
 

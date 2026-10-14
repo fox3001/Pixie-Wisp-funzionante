@@ -29,8 +29,9 @@ jobs:
       - name: Prepara il sito (stessa creatura dell'app Android)
         run: |
           mkdir -p _site
-          cp web/* _site/
           cp android/app/src/main/assets/engine.js android/app/src/main/assets/voice.js android/app/src/main/assets/lament.js _site/
+          # se web/ ha una sua versione (es. engine.js in prova solo sul sito) vince quella
+          cp web/* _site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

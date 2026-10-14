@@ -27,7 +27,7 @@ a{color:#9fe6ff}a:hover{color:#d6f5ff}
 </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;lunghezza&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0.5,&quot;max&quot;:2,&quot;step&quot;:0.05,&quot;default&quot;:2,&quot;section&quot;:&quot;Fiamma&quot;},&quot;occhi&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;attuale&quot;,&quot;maschera&quot;,&quot;maschera noBK&quot;,&quot;lanterna&quot;,&quot;nucleo&quot;,&quot;cartoon&quot;,&quot;anello&quot;,&quot;sfera&quot;,&quot;ombra&quot;,&quot;mix&quot;],&quot;default&quot;:&quot;maschera&quot;,&quot;section&quot;:&quot;Occhi&quot;},&quot;saluta&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;section&quot;:&quot;Reazioni&quot;},&quot;crucio&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;section&quot;:&quot;Reazioni&quot;},&quot;finite&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;section&quot;:&quot;Reazioni&quot;},&quot;incendio&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;section&quot;:&quot;Reazioni&quot;},&quot;gelatina&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;section&quot;:&quot;Reazioni&quot;},&quot;accio&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;section&quot;:&quot;Reazioni&quot;},&quot;vieni&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;section&quot;:&quot;Reazioni&quot;},&quot;mescola&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;mercurio&quot;,&quot;vortice&quot;,&quot;frullato&quot;,&quot;olio&quot;],&quot;default&quot;:&quot;mercurio&quot;,&quot;section&quot;:&quot;Reazioni&quot;},&quot;corpo&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;strati&quot;,&quot;plasma&quot;,&quot;scintille&quot;,&quot;candela&quot;],&quot;default&quot;:&quot;scintille&quot;,&quot;section&quot;:&quot;Corpo&quot;},&quot;$preview&quot;:{&quot;width&quot;:1140,&quot;height&quot;:660}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;lunghezza&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0.5,&quot;max&quot;:2,&quot;step&quot;:0.05,&quot;default&quot;:2,&quot;section&quot;:&quot;Fiamma&quot;},&quot;occhi&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;attuale&quot;,&quot;maschera&quot;,&quot;maschera noBK&quot;,&quot;lanterna&quot;,&quot;nucleo&quot;,&quot;cartoon&quot;,&quot;anello&quot;,&quot;sfera&quot;,&quot;ombra&quot;,&quot;mix&quot;],&quot;default&quot;:&quot;maschera&quot;,&quot;section&quot;:&quot;Occhi&quot;},&quot;saluta&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;section&quot;:&quot;Reazioni&quot;},&quot;crucio&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;section&quot;:&quot;Reazioni&quot;},&quot;finite&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;section&quot;:&quot;Reazioni&quot;},&quot;incendio&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;section&quot;:&quot;Reazioni&quot;},&quot;gelatina&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;section&quot;:&quot;Reazioni&quot;},&quot;accio&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;section&quot;:&quot;Reazioni&quot;},&quot;vieni&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;section&quot;:&quot;Reazioni&quot;},&quot;mescola&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;mercurio&quot;,&quot;vortice&quot;,&quot;frullato&quot;,&quot;olio&quot;],&quot;default&quot;:&quot;mercurio&quot;,&quot;section&quot;:&quot;Reazioni&quot;},&quot;corpo&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;strati&quot;,&quot;plasma&quot;,&quot;scintille&quot;,&quot;candela&quot;],&quot;default&quot;:&quot;scintille&quot;,&quot;section&quot;:&quot;Corpo&quot;},&quot;$preview&quot;:{&quot;width&quot;:1140,&quot;height&quot;:660}}">
 class Component extends DCLogic {
   componentWillUnmount() {
     this._halt(); this._detach(); this._cv = null;
@@ -157,7 +157,8 @@ class Component extends DCLogic {
   _run() {
     if (this._raf || !this._cv) return;
     const self = this, cv = this._cv;
-    const ctx = cv.getContext('2d');
+    // let: per gli aloni degli occhi si disegna per un attimo su una tela nascosta (vedi shapeGlow)
+    let ctx = cv.getContext('2d');
     if (!ctx) return;
 
     // ---- costanti e utilita'
@@ -1677,22 +1678,42 @@ class Component extends DCLogic {
           // fuori dal riquadro e qui arriva solo la sua ombra morbida, senza bordi.
           // layers: [ingrandimento, sfocatura, intensita']
           const shapeGlow = (c3, layers) => {
-            const cs = 'rgb(' + c3.map(Math.round).join(',') + ')';
-            const m = (ctx.getTransform && ctx.getTransform()) || { a: 1, b: 0, c: 0, d: 1 }, dp = Math.sqrt(Math.abs(m.a * m.d - m.b * m.c)) || 1;
-            const OFF = ((ctx.canvas && ctx.canvas.width) || 2000) / dp + er * 6;
+            // l'alone e' l'ombra sfocata della sagoma dell'occhio, fatta su una tela nascosta grande quanto l'occhio:
+            // la sagoma sta appena fuori dalla tela e dentro arriva solo la sua ombra; poi la tela si copia sullo schermo.
+            // Cosi' nello schermo non spunta mai niente da un'altra parte.
+            const main = ctx;
+            const m = (main.getTransform && main.getTransform()) || null;
+            if (!m || !main.canvas) return;
+            const dp = Math.sqrt(Math.abs(m.a * m.d - m.b * m.c)) || 1, mx = Math.max(Math.hypot(m.a, m.b), Math.hypot(m.c, m.d));
             const xeN = (S.mode === 'crucio' || S.mode === 'stop') ? (S.xeye || 0) : 0;
             // forme sottili (ciglio chiuso, sorriso, ">  <"): alone stretto e poco sfocato, cosi' non diventa un pallino
             const thin = S.smile ? 1 : Math.max(xeN * 0.35, (e.cl || 0) * (1 - xeN));
             const hk = Math.max(0.35, Math.min(1, e.rh / er)) * (1 - thin) + 0.45 * thin;
             const bk = (0.4 + 0.6 * hk) * (1 - 0.55 * thin);
+            const ex = m.a * e.x + m.c * e.y + m.e, ey = m.b * e.x + m.d * e.y + m.f;   // occhio in pixel dello schermo
+            const A = self._glA || (self._glA = document.createElement('canvas')), ga = A.getContext('2d');
+            const cs = 'rgb(' + c3.map(Math.round).join(',') + ')';
             for (const ps of layers) {
-              ctx.save();
-              ctx.translate(e.x + OFF, e.y); ctx.scale(1 + (ps[0] - 1) * (1 - 0.5 * thin), 1 + (ps[0] - 1) * hk * (1 - 0.5 * thin)); ctx.translate(-e.x, -e.y);
-              ctx.shadowColor = cs; ctx.shadowOffsetX = -OFF * m.a; ctx.shadowOffsetY = -OFF * (m.b || 0); ctx.shadowBlur = er * ps[1] * bk * dp;
-              drawWhite(ec, c3, ps[2]);
-              ctx.restore();
+              const sx = 1 + (ps[0] - 1) * (1 - 0.5 * thin), sy = 1 + (ps[0] - 1) * hk * (1 - 0.5 * thin);
+              const blurPx = Math.max(1, er * ps[1] * bk * dp);
+              const half = er * 2.3 * Math.max(sx, sy) * mx + blurPx * 1.6;   // mezzo lato della zona, in pixel dello schermo
+              const k = Math.min(1, 160 / half);                               // tela piccola: veloce anche sull'iPad
+              const n = Math.max(8, Math.ceil(half * 2 * k));
+              if (A.width !== n || A.height !== n) { A.width = n; A.height = n; } else { ga.setTransform(1, 0, 0, 1, 0, 0); ga.clearRect(0, 0, n, n); }
+              // sagoma spostata di n pixel a destra (fuori dalla tela), ombra riportata indietro di n pixel
+              ga.setTransform(m.a * k, m.b * k, m.c * k, m.d * k, n / 2 - (m.a * e.x + m.c * e.y) * k + n, n / 2 - (m.b * e.x + m.d * e.y) * k);
+              ga.translate(e.x, e.y); ga.scale(sx, sy); ga.translate(-e.x, -e.y);
+              ga.globalCompositeOperation = 'source-over'; ga.globalAlpha = 1;
+              ga.shadowColor = cs; ga.shadowOffsetX = -n; ga.shadowOffsetY = 0; ga.shadowBlur = blurPx * k;
+              ctx = ga;
+              try { drawWhite(ec, c3, 1 / Math.max(0.01, va)); } finally { ctx = main; }
+              ga.shadowColor = 'rgba(0,0,0,0)'; ga.shadowBlur = 0; ga.shadowOffsetX = 0;
+              main.save();
+              main.setTransform(1, 0, 0, 1, 0, 0);
+              main.globalAlpha = Math.min(1, ps[2] * va);
+              main.drawImage(A, 0, 0, n, n, ex - half, ey - half, half * 2, half * 2);
+              main.restore();
             }
-            ctx.shadowColor = 'rgba(0,0,0,0)'; ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
           };
           const haloNoBK = () => {
             const bc = mix3(col('outer', tint), AQUA.outer, 0.45 * (1 - tint) * (1 - (S.purp || 0)));

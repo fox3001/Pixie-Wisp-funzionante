@@ -13,29 +13,35 @@ App Android fatta in Python con [Kivy](https://kivy.org), versione **3.4.0**.
 ## Cosa fa
 
 Il wisp vola tranquillo da un punto all'altro dello schermo, gira la "testa", sbatte gli occhi e lascia una scia di scintille.
-L'app ascolta continuamente il microfono (in italiano) e capisce tre parole:
+L'app ascolta continuamente il microfono (in italiano) e capisce questi comandi (tasto = Pixie Remote / tastiera):
 
-| Parola detta | Cosa succede |
-|---|---|
-| **"Crucio"** o **"Echo Insania"** | Il wisp si blocca, strizza gli occhi, trema sempre più forte e diventa rosso, con un lamento. Se nessuno lo ferma, dopo **5 secondi esplode**. Dopo l'esplosione lo schermo resta buio 5 secondi, poi un "fiammifero" lo riaccende. |
-| **"Stop"** | Se sta soffrendo (crucio), si calma: torna azzurro in 2 secondi e sbatte gli occhi due volte. Se non sta soffrendo, rallenta e vola calmo per qualche secondo. |
-| **"Ciao"** | Fa gli occhi sorridenti a mezzaluna, ondeggia per 3 secondi e fa un suono allegro. |
+| Comando | Tasto | Cosa succede |
+|---|---|---|
+| **"Crucio"** o **"Echo Insania"** | 1 | Si blocca, strizza gli occhi, trema sempre più forte e diventa rosso, con un lamento. Se nessuno lo ferma, dopo **5 secondi esplode**; dopo 5 secondi di buio un "fiammifero" lo riaccende. |
+| **"Finite"** o **"Finite Incantatem"** | 2 | Ferma **qualunque** incantesimo in corso (crucio, incendio, gelatina, accio, vieni qui). Se non c'è niente da fermare, si calma. |
+| **"Ciao"** | 3 | Occhi sorridenti a mezzaluna, ondeggia e fa un suono allegro. |
+| **"Incendio"** | 4 | Una scintilla gli accende la testa: corre in giro preoccupato per tutta la profondità del box, poi il fuoco si spegne in uno sbuffo di fumo e ti guarda male. |
+| **"Locomotor Wibbly"** o **"Epoximise"** | 5 | Lampo viola: si scioglie come miele fino a restare solo gli occhi, poi si ricompone a molla. |
+| **"Accio"** | 6 | Viene tirato contro il vetro davanti, ci si spiaccica, cola un po' e si stacca come gomma. |
+| **"Vieni qui"** o **"Dai vieni qui"** | 7 | Va piano piano sul lato destro e si fa "grattare": si rimescola come mercurio, poi rallenta e sorride. |
 
-Il riconoscimento è "tollerante": capisce anche storpiature tipo *cruccio, krucio, eco insania, stopp, ciau, ciaone*… (vedi `VOICE_COMMANDS` e `VOICE_PHRASES` in `main.py`).
-Per evitare falsi allarmi, una parola conta come comando solo se ne ha la "forma" (`VOICE_SHAPES`) e non è una parola italiana comune (`NOT_COMMANDS`): così "grazie", "musica" o "sto bene" non fanno scattare niente.
+Il riconoscimento è "tollerante" (logica in `android/app/src/main/assets/voice.js`): capisce anche storpiature tipo
+*cruccio, eco insania, a cio, in cendio, loco motor ubli, epoxy mise, finiti*… ma una parola conta come comando solo se ne ha
+la "forma" e non è una parola italiana comune simile (*intendo, Asia, finito, possibile*…). L'elenco dei comandi è anche nel menu (doppio tap).
 
 ---
 
 ## App Android (APK)
 
-La versione da installare sul telefono è nella cartella `android/`: è la creatura del mockup "Fiamma viva"
-(pagina `android/app/src/main/assets/`) dentro un'app Android nativa.
+La versione da installare sul telefono è nella cartella `android/`: è la creatura del mockup Claude Design
+`design/CorpoScintille.dc.html` (pagina `android/app/src/main/assets/`) dentro un'app Android nativa.
+Il motore `engine.js` si rigenera dal mockup con `python3 tools/build_engine.py design/CorpoScintille.dc.html android/app/src/main/assets/engine.js`.
 
 - Si apre a schermo intero, sopra la schermata di blocco, con lo schermo sempre acceso.
 - Mentre è aperta: **silenzio totale** (niente notifiche, chiamate o suoni del telefono, serve autorizzarlo una volta)
   e **app fissata** sullo schermo (Home e app recenti non la chiudono).
 - Nessuna scritta sullo schermo. **Doppio tap** apre il menu: torna al wisp, prova le reazioni,
-  telecomando Bluetooth (solo se attivato, con i tasti assegnabili alle azioni), silenzio, esci.
+  elenco dei comandi vocali, telecomando Bluetooth (solo se attivato, con i tasti assegnabili alle azioni), silenzio, esci.
 - Comandi vocali come sopra (stessa logica, in `voice.js`).
 
 **Scaricare l'APK:** ad ogni modifica GitHub lo compila da solo (Actions → "APK") e lo pubblica
@@ -54,8 +60,9 @@ La stessa creatura gira anche nel browser: **https://fox3001.github.io/Pixie-Wis
 ## Pixie Remote (telefono come telecomando)
 
 `android/remote/`: mini app Android che fa diventare il telefono una **tastiera Bluetooth**
-con tre pulsanti grandi: Crucio, Stop, Ciao (tasti 1, 2, 3). Funziona con l'iPad (pagina Safari) e con
-l'app Pixie Wisp su un altro Android: in entrambe 1, 2, 3 sono già assegnati, basta attivare «Usa un telecomando».
+con un pulsante per ogni comando: Crucio 1, Finite 2, Ciao 3, Incendio 4, Gelatina 5, Accio 6, Vieni qui 7.
+Funziona con l'iPad (pagina Safari) e con l'app Pixie Wisp su un altro Android: in entrambe i tasti da 1 a 7 sono
+già assegnati, basta attivare «Usa un telecomando».
 Serve Android 9 o più recente. Si scarica dalla stessa release (`PixieRemote.apk`).
 
 ## I file

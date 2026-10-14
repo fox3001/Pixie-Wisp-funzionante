@@ -60,6 +60,12 @@
   .seg button { border: 0; border-radius: 0; min-height: 44px; padding: 0 14px; font-size: 15px; background: transparent; }
   .seg button + button { border-left: 1px solid var(--line); }
   .seg button.on { background: var(--accent); color: #021018; font-weight: 700; }
+  table.cmds { width: 100%; border-collapse: collapse; font-size: 15px; }
+  table.cmds td { padding: 7px 4px; border-top: 1px solid var(--line); vertical-align: top; }
+  table.cmds tr:first-child td { border-top: 0; }
+  table.cmds td.k { color: var(--dim); white-space: nowrap; width: 1%; padding-right: 14px; }
+  table.cmds td.w { color: var(--text); }
+  table.cmds td.n { color: var(--dim); text-align: right; white-space: nowrap; width: 1%; }
 </style>
 </head>
 <body>
@@ -73,13 +79,14 @@
   <div class="grid">
     <div class="card">
       <h2>Prova le reazioni</h2>
-      <div class="row">
-        <button data-cmd="crucio">Crucio</button>
-        <button data-cmd="stop">Stop</button>
-        <button data-cmd="ciao">Ciao</button>
-      </div>
-      <p class="hint">A voce: «Crucio» o «Echo Insania», «Stop», «Ciao».</p>
+      <div class="row" id="cmd-buttons"></div>
       <div class="row"><span class="label">Microfono</span><span class="status" id="st-mic">…</span></div>
+    </div>
+
+    <div class="card">
+      <h2>Comandi vocali</h2>
+      <table class="cmds" id="cmd-list"></table>
+      <p class="hint">«Finite» ferma qualunque incantesimo in corso (crucio, incendio, gelatina, accio, vieni qui).</p>
     </div>
 
     <div class="card">
@@ -151,7 +158,9 @@
 (function () {
   const A = window.Android || null;            // ponte verso l'app Android (assente nel browser)
   const $ = (id) => document.getElementById(id);
-  const ACTIONS = [['crucio', 'Crucio'], ['stop', 'Stop'], ['ciao', 'Ciao']];
+  // comandi: [azione, nome, parole da dire, tasto del telecomando Pixie Remote]
+  const ACTIONS = VoiceMatch.LIST.map((c) => [c[0], c[1]]);
+  const KEYNUM = { crucio: '1', finite: '2', ciao: '3', incendio: '4', gelatina: '5', accio: '6', vieni: '7' };
 
   // ---- impostazioni salvate
   const load = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
@@ -159,11 +168,18 @@
   const cfg = {
     remote: load('remote', false),            // telecomando: SOLO se attivato
     // codice tasto -> { action, name }. 1, 2, 3 gia' assegnati: sono i tasti che manda l'app Pixie Remote
-    keys: load('keys', { 8: { action: 'crucio', name: '1' }, 9: { action: 'stop', name: '2' }, 10: { action: 'ciao', name: '3' } }),
+    keys: load('keys', {}),
     pin: load('pin', true),
     zone: load('zone', { on: true, corner: 'tr', size: 'm' }),
     flip: load('flip', false)
   };
+  // tasti 1-7 gia' assegnati (sono quelli che manda l'app Pixie Remote; codici Android 8..14);
+  // "stop" si chiama ora "finite"
+  for (const c in cfg.keys) if (cfg.keys[c].action === 'stop') cfg.keys[c].action = 'finite';
+  if (load('keysV', 0) < 2) {
+    for (const a in KEYNUM) { const code = String(7 + +KEYNUM[a]); if (!cfg.keys[code]) cfg.keys[code] = { action: a, name: KEYNUM[a] }; }
+    save('keys', cfg.keys); save('keysV', 2);
+  }
   const ZSIZE = { s: [52, 34], m: [72, 46], l: [100, 64] };   // dp: larghezza, altezza
   let zoneShowUntil = 0;
   const pushZone = () => {
@@ -201,7 +217,19 @@
   });
   $('back').onclick = closeMenu;
   window.onBack = () => { if (learning) stopLearn(); else if (isOpen()) closeMenu(); };
-  document.querySelectorAll('[data-cmd]').forEach((b) => { b.onclick = () => { closeMenu(); lastCmd = ''; run(b.dataset.cmd); }; });
+  // pulsanti di prova ed elenco dei comandi vocali
+  for (const [act, label] of ACTIONS) {
+    const b = document.createElement('button'); b.textContent = label;
+    b.onclick = () => { closeMenu(); lastCmd = ''; run(act); };
+    $('cmd-buttons').appendChild(b);
+  }
+  for (const c of VoiceMatch.LIST) {
+    const tr = document.createElement('tr');
+    const k = document.createElement('td'); k.className = 'k'; k.textContent = c[1];
+    const w = document.createElement('td'); w.className = 'w'; w.textContent = c[2].map((x) => '«' + x + '»').join('  oppure  ');
+    const n = document.createElement('td'); n.className = 'n'; n.textContent = 'tasto ' + KEYNUM[c[0]];
+    tr.appendChild(k); tr.appendChild(w); tr.appendChild(n); $('cmd-list').appendChild(tr);
+  }
 
   // ---- voce (dall'app)
   window.onSpeech = (text) => { const cmd = VoiceMatch.checkText(text); if (cmd) run(cmd); };

@@ -19,16 +19,40 @@ creatura sembra sospesa a mezz'aria dentro la scatola, senza schermo.
 
 Reagisce alla voce e a un telecomando:
 
-  CRUCIO  (oppure "ECHO INSANIA")
+  (tra parentesi il tasto del telecomando Pixie Remote)
+
+  CRUCIO  oppure "ECHO INSANIA"                                     (1)
           soffre: si blocca, trema sempre più forte, diventa rossa e chiude
           piano piano gli occhi; si lamenta. Se nessuno la ferma, dopo 5
           secondi esplode. Dopo l'esplosione resta tutto buio per 5 secondi,
           poi un "fiammifero" la riaccende.
 
-  STOP    se sta soffrendo si calma: torna azzurra e sbatte gli occhi due
-          volte. Se non sta soffrendo, rallenta e vola tranquilla.
+  FINITE  oppure "FINITE INCANTATEM" (accento sulla seconda i)      (2)
+          ferma qualunque incantesimo in corso: crucio, incendio, gelatina,
+          accio, vieni qui. Se non c'è niente da fermare, si calma.
 
-  CIAO    fa gli occhi sorridenti ad arco, ondeggia e fa un suono allegro.
+  CIAO    fa gli occhi sorridenti ad arco, ondeggia e fa un suono allegro. (3)
+
+  INCENDIO                                                          (4)
+          una scintilla gli accende la testa: corre in giro preoccupata
+          avanti e indietro per tutta la profondità del box (senza mai
+          sbattere), poi il fuoco si spegne in uno sbuffo di fumo e ti
+          guarda male borbottando.
+
+  LOCOMOTOR WIBBLY  oppure "EPOXIMISE"   (gelatina)                 (5)
+          lampo viola: si scioglie come miele / gelato al sole fino a
+          restare solo gli occhi sopra la pozza, poi si ricompone a molla.
+
+  ACCIO                                                             (6)
+          viene tirata contro il vetro davanti, ci si spiaccica, cola un
+          po', si stacca come gomma, si scrolla e ti guarda storto.
+
+  VIENI QUI  oppure "DAI VIENI QUI"                                 (7)
+          guarda a destra, poi va piano piano sempre nello stesso punto sul
+          lato destro e si fa "grattare": tre dita la rimescolano come
+          mercurio (anche gli occhi), poi rallenta, sorride e torna normale.
+
+  L'elenco dei comandi è anche nel menu (doppio tap).
 
 
 ------------------------------------------------------------------------------
@@ -77,11 +101,12 @@ Reagisce alla voce e a un telecomando:
 
   Menu: DOPPIO TAP sullo schermo
   - Torna al wisp                 (il pulsante grande in alto)
-  - Prova le reazioni             Crucio, Stop, Ciao
+  - Prova le reazioni             un pulsante per ogni comando
+  - Comandi vocali                l'elenco delle parole da dire e dei tasti
   - Telecomando Bluetooth         SOLO se attivato: collega un dispositivo,
                                   assegna i tasti alle azioni (anche più tasti
-                                  per azione). I tasti 1, 2, 3 sono già
-                                  assegnati a Crucio, Stop, Ciao.
+                                  per azione). I tasti da 1 a 7 sono già
+                                  assegnati (vedi l'elenco al punto 1).
   - Box Pepper's ghost            angolo coperto (vedi 3.4), schermo capovolto
   - Tutto in secondo piano        stato del silenzio totale, app fissata
   - Esci dall'app
@@ -94,7 +119,7 @@ Reagisce alla voce e a un telecomando:
   - Al primo avvio un tocco su "Tocca per iniziare" (Safari lo pretende per
     attivare l'audio). Poi doppio tap = menu, come su Android.
   - Il telecomando funziona se si presenta come tastiera Bluetooth (per
-    esempio l'app Pixie Remote, vedi 3.3). I tasti 1, 2, 3 sono già assegnati.
+    esempio l'app Pixie Remote, vedi 3.3). I tasti da 1 a 7 sono già assegnati.
   - La voce in Safari è sperimentale e spenta di base: l'ascolto può fermarsi
     da solo e, con una cassa Bluetooth, l'audio può finire sull'altoparlante
     dell'iPad. Per il box: telecomando sì, voce no.
@@ -104,8 +129,9 @@ Reagisce alla voce e a un telecomando:
 
 3.3  PIXIE REMOTE (PixieRemote.apk) — il telefono come telecomando
 
-  Il telefono si presenta come una TASTIERA Bluetooth con tre pulsanti
-  grandi: Crucio (tasto 1), Stop (tasto 2), Ciao (tasto 3).
+  Il telefono si presenta come una TASTIERA Bluetooth con un pulsante per
+  ogni comando: Incendio (4), Gelatina (5), Accio (6), Vieni qui (7),
+  Crucio (1), Ciao (3) e, largo in fondo, Finite (2).
   Serve Android 9 o più recente.
 
   Collegarlo all'iPad
@@ -282,7 +308,9 @@ Portarla nel box ha fatto emergere problemi nuovi, risolti uno alla volta:
     src/main/java/.../MainActivity.java
                                schermo intero, silenzio totale, app fissata,
                                ascolto vocale continuo, tasti del telecomando
-    src/main/assets/engine.js  il motore della creatura (Canvas 2D)
+    src/main/assets/engine.js  il motore della creatura (Canvas 2D), generato
+                               dal mockup design/CorpoScintille.dc.html con
+                               tools/build_engine.py
     src/main/assets/voice.js   riconoscimento dei comandi dal testo
     src/main/assets/lament.js  il lamento originale (MP3 in base64)
     src/main/assets/index.html pagina a tutto schermo + menu

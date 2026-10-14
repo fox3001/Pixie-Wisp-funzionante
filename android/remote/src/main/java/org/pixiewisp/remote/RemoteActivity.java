@@ -41,14 +41,14 @@ import java.util.concurrent.Executor;
 
 /**
  * Pixie Remote: il telefono diventa una tastiera Bluetooth.
- * I tre pulsanti mandano i tasti 1, 2, 3 all'iPad (o a un altro telefono),
- * dove Pixie Wisp li usa come Crucio, Stop e Ciao.
+ * I pulsanti mandano i tasti da 1 a 7 all'iPad (o a un altro telefono), dove Pixie Wisp li usa come
+ * 1 Crucio, 2 Finite, 3 Ciao, 4 Incendio, 5 Gelatina, 6 Accio, 7 Vieni qui.
  */
 @SuppressLint("MissingPermission")
 public class RemoteActivity extends Activity {
 
-    // tasti HID (tabella "Keyboard/Keypad"): 1, 2, 3
-    private static final byte KEY_1 = 0x1E, KEY_2 = 0x1F, KEY_3 = 0x20;
+    // tasti HID (tabella "Keyboard/Keypad"): 1 ... 7
+    private static final byte KEY_1 = 0x1E, KEY_2 = 0x1F, KEY_3 = 0x20, KEY_4 = 0x21, KEY_5 = 0x22, KEY_6 = 0x23, KEY_7 = 0x24;
     private static final int REQ_PERMS = 1, REQ_ENABLE = 2;
 
     // tastiera standard con Report ID 1: [modificatori, riservato, 6 tasti]
@@ -325,13 +325,13 @@ public class RemoteActivity extends Activity {
         Button b = new Button(this);
         b.setText(text);
         b.setAllCaps(false);
-        b.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30);
+        b.setTextSize(TypedValue.COMPLEX_UNIT_SP, 22);
         b.setTypeface(Typeface.DEFAULT_BOLD);
         b.setTextColor(Color.parseColor("#021018"));
         b.setBackground(round(color, 0));
         b.setStateListAnimator(null);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f);
-        lp.setMargins(0, dp(8), 0, dp(8));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
+        lp.setMargins(dp(5), dp(5), dp(5), dp(5));
         b.setLayoutParams(lp);
         b.setOnClickListener(v -> {
             v.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
@@ -339,6 +339,14 @@ public class RemoteActivity extends Activity {
         });
         actionButtons.add(b);
         return b;
+    }
+
+    private LinearLayout row(Button... bs) {
+        LinearLayout r = new LinearLayout(this);
+        r.setOrientation(LinearLayout.HORIZONTAL);
+        r.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+        for (Button b : bs) r.addView(b);
+        return r;
     }
 
     private Button smallButton(String text) {
@@ -381,9 +389,11 @@ public class RemoteActivity extends Activity {
         LinearLayout pad = new LinearLayout(this);
         pad.setOrientation(LinearLayout.VERTICAL);
         pad.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
-        pad.addView(bigButton("Crucio", Color.parseColor("#FF7A5C"), KEY_1));
-        pad.addView(bigButton("Stop", Color.parseColor("#5FD0FF"), KEY_2));
-        pad.addView(bigButton("Ciao", Color.parseColor("#7EE2A8"), KEY_3));
+        // una riga di pulsanti per ogni coppia di incantesimi; Finite largo in fondo
+        pad.addView(row(bigButton("Incendio", Color.parseColor("#FFA24A"), KEY_4), bigButton("Gelatina", Color.parseColor("#B98CFF"), KEY_5)));
+        pad.addView(row(bigButton("Accio", Color.parseColor("#FFD36B"), KEY_6), bigButton("Vieni qui", Color.parseColor("#6FE3D2"), KEY_7)));
+        pad.addView(row(bigButton("Crucio", Color.parseColor("#FF7A5C"), KEY_1), bigButton("Ciao", Color.parseColor("#7EE2A8"), KEY_3)));
+        pad.addView(row(bigButton("Finite", Color.parseColor("#5FD0FF"), KEY_2)));
         root.addView(pad);
 
         ScrollView sv = new ScrollView(this);
@@ -395,7 +405,7 @@ public class RemoteActivity extends Activity {
         setup.addView(text("1. Sull'iPad apri Impostazioni → Bluetooth e lascia la pagina aperta.\n"
                 + "2. Qui tocca «Cerca l'iPad», poi toccalo nella lista e conferma il codice su tutti e due.\n"
                 + "3. Nella pagina di Pixie Wisp (doppio tap → menu) attiva «Usa un telecomando»: "
-                + "Crucio, Stop e Ciao sono già assegnati ai tasti 1, 2, 3.", 14, "#8FB3C9"));
+                + "tutti i pulsanti sono già assegnati (tasti da 1 a 7).", 14, "#8FB3C9"));
         scanBtn = smallButton("Cerca l'iPad");
         scanBtn.setOnClickListener(v -> toggleScan());
         setup.addView(scanBtn);

@@ -84,7 +84,7 @@
 
 <div id="menu" role="dialog" aria-label="Menu">
   <div class="top">
-    <h1>Pixie Wisp</h1>
+    <h1>Pixie Wisp <span style="font-weight:400;font-size:13px">· versione 14/10 22:50</span></h1>
     <button class="primary" id="back">Torna al wisp</button>
   </div>
   <div class="grid">
@@ -92,6 +92,8 @@
       <h2>Prova le reazioni</h2>
       <div class="row" id="cmd-buttons"></div>
       <div class="row"><span class="label">Schermo sempre acceso</span><span class="status" id="st-wake">…</span></div>
+      <div class="row"><span class="label">Schermo intero<br><span class="hint" id="fs-why"></span></span><span class="status" id="st-full">…</span></div>
+      <div class="row"><button id="full-btn">Vai a schermo intero</button></div>
     </div>
 
     <div class="card">
@@ -198,13 +200,21 @@
   // ---- avvio: un tocco sblocca l'audio
   // ---- schermo intero: su iPad nasconde la barra di Safari (indirizzo, pulsanti) e la barra di stato.
   // Si puo' chiedere solo dopo un tocco: lo rifa' a ogni tocco se nel frattempo e' uscita.
-  const isFull = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
-  const goFull = () => {
-    if (isFull()) return;
-    const el = document.documentElement, f = el.requestFullscreen || el.webkitRequestFullscreen;
-    if (!f) return;
-    try { const r = f.call(el); if (r && r.catch) r.catch(() => {}); } catch (e) {}
+  const isFull = () => !!(document.fullscreenElement || document.webkitFullscreenElement || document.webkitCurrentFullScreenElement);
+  // Safari su iPad a volte rifiuta la pagina intera ma accetta il body (o viceversa): prova in ordine
+  let fullErr = '';
+  const tryFull = (els) => {
+    const el = els.shift();
+    if (!el) return;
+    const f = el.requestFullscreen || el.webkitRequestFullscreen || el.webkitRequestFullScreen;
+    if (!f) { fullErr = 'non supportato'; tryFull(els); return; }
+    try {
+      const r = f.call(el);
+      if (r && r.then) r.catch((e) => { fullErr = (e && e.message) || 'rifiutato'; tryFull(els); });
+      else setTimeout(() => { if (!isFull()) tryFull(els); }, 250);
+    } catch (e) { fullErr = (e && e.message) || 'errore'; tryFull(els); }
   };
+  const goFull = () => { if (!isFull()) tryFull([document.body, document.documentElement]); };
   $('go').onclick = () => {
     goFull();
     Wisp.unlockAudio();
@@ -219,14 +229,17 @@
   const openMenu = () => { menu.classList.add('open'); status(); renderMap(); };
   const closeMenu = () => { menu.classList.remove('open'); stopLearn(); };
   let tapT = 0, tapX = 0, tapY = 0;
+  $('cv').addEventListener('click', () => goFull());
   $('cv').addEventListener('pointerdown', (e) => {
-    goFull();
     Wisp.unlockAudio();
     const now = performance.now();
     if (now - tapT < 350 && Math.hypot(e.clientX - tapX, e.clientY - tapY) < 60) { tapT = 0; openMenu(); return; }
     tapT = now; tapX = e.clientX; tapY = e.clientY;
   });
   $('back').onclick = () => { closeMenu(); goFull(); };
+  $('full-btn').onclick = () => { closeMenu(); goFull(); };
+  document.addEventListener('fullscreenchange', () => status());
+  document.addEventListener('webkitfullscreenchange', () => status());
   // pulsanti di prova ed elenco dei comandi vocali
   for (const [act, label] of ACTIONS) {
     const b = document.createElement('button'); b.textContent = label;
@@ -329,6 +342,9 @@
   // ---- stato nel menu
   const setStatus = (el, text, ok) => { el.textContent = text; el.className = 'status ' + (ok ? 'ok' : 'warn'); };
   const status = () => {
+    const fs = isFull();
+    setStatus($('st-full'), fs ? 'Attivo' : 'Spento', fs);
+    $('fs-why').textContent = fs ? '' : (fullErr ? 'Safari ha risposto: ' + fullErr : '');
     setStatus($('st-wake'), wake ? 'Attivo' : ('wakeLock' in navigator ? 'Non attivo' : 'Imposta Blocco automatico: Mai'), !!wake);
     const m = { on: 'In ascolto', off: cfg.voice ? 'In ripartenza' : 'Spento', denied: 'Permesso negato', none: 'Non disponibile in questo browser' }[micState];
     setStatus($('st-mic'), m, micState === 'on');

@@ -7,6 +7,7 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.hardware.input.InputManager;
@@ -480,6 +481,14 @@ public class MainActivity extends Activity {
         public void setPinned(boolean on) {
             pinWanted = on;
             ui.post(() -> { if (on) startPin(); else stopPin(); });
+        }
+
+        /** Orientamento fisso (il telefono steso nel box non deve far girare l'immagine). */
+        @JavascriptInterface
+        public void setFlipped(boolean flip) {
+            ui.post(() -> setRequestedOrientation(flip
+                    ? ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+                    : ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE));
         }
 
         @JavascriptInterface

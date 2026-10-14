@@ -6,7 +6,7 @@
 <title>Pixie Wisp</title>
 <style>
   :root {
-    --bg: #04060b;
+    --bg: #000;
     --panel: rgba(8, 14, 28, 0.94);
     --line: rgba(160, 220, 255, 0.16);
     --text: #e8f7ff;
@@ -56,6 +56,10 @@
   #learn.open { display: flex; }
   #learn p { font-size: 22px; margin: 0; }
   .devices { font-size: 14px; color: var(--dim); }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; min-height: 44px; padding: 0 14px; font-size: 15px; background: transparent; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button.on { background: var(--accent); color: #021018; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -95,6 +99,31 @@
     </div>
 
     <div class="card">
+      <h2>Box Pepper's ghost</h2>
+      <div class="row">
+        <span class="label">Copri l'angolo del microfono<br><span class="hint">la creatura non ci passa mai e l'angolo resta nero: ci metti sopra un pezzetto di nastro nero</span></span>
+        <label class="switch"><input type="checkbox" id="zone-on"><span></span></label>
+      </div>
+      <div id="zone-box">
+        <div class="row"><span class="label">Angolo</span>
+          <div class="seg" id="zone-corner">
+            <button data-v="tl">↖</button><button data-v="tr">↗</button><button data-v="bl">↙</button><button data-v="br">↘</button>
+          </div>
+        </div>
+        <div class="row"><span class="label">Grandezza</span>
+          <div class="seg" id="zone-size">
+            <button data-v="s">Piccolo</button><button data-v="m">Medio</button><button data-v="l">Grande</button>
+          </div>
+        </div>
+        <div class="row"><button id="zone-show">Mostra dove mettere il nastro</button></div>
+      </div>
+      <div class="row">
+        <span class="label">Schermo capovolto<br><span class="hint">l'immagine resta ferma anche col telefono steso</span></span>
+        <label class="switch"><input type="checkbox" id="flip-on"><span></span></label>
+      </div>
+    </div>
+
+    <div class="card">
       <h2>Tutto in secondo piano</h2>
       <div class="row">
         <span class="label">Silenzio totale<br><span class="hint">niente notifiche, chiamate e suoni del telefono</span></span>
@@ -130,12 +159,21 @@
   const cfg = {
     remote: load('remote', false),            // telecomando: SOLO se attivato
     keys: load('keys', {}),                   // codice tasto -> { action, name }
-    pin: load('pin', true)
+    pin: load('pin', true),
+    zone: load('zone', { on: true, corner: 'tr', size: 'm' }),
+    flip: load('flip', false)
+  };
+  const ZSIZE = { s: [52, 34], m: [72, 46], l: [100, 64] };   // dp: larghezza, altezza
+  let zoneShowUntil = 0;
+  const pushZone = () => {
+    const z = cfg.zone, sz = ZSIZE[z.size] || ZSIZE.m;
+    Wisp.setZone({ on: !!z.on, corner: z.corner, w: sz[0], h: sz[1], show: Date.now() < zoneShowUntil });
   };
   const pushCfg = () => {
     if (!A) return;
     try { A.setRemoteEnabled(!!cfg.remote); } catch (e) {}
     try { A.setPinned(!!cfg.pin); } catch (e) {}
+    try { A.setFlipped(!!cfg.flip); } catch (e) {}
   };
 
   // ---- creatura
@@ -203,6 +241,25 @@
   $('remote-on').checked = !!cfg.remote;
   $('remote-on').onchange = (e) => { cfg.remote = e.target.checked; save('remote', cfg.remote); pushCfg(); renderMap(); };
   $('bt-settings').onclick = () => { if (A) A.openBluetoothSettings(); };
+
+  // ---- box: angolo coperto, schermo capovolto
+  const segs = () => {
+    document.querySelectorAll('#zone-corner button').forEach((b) => b.classList.toggle('on', b.dataset.v === cfg.zone.corner));
+    document.querySelectorAll('#zone-size button').forEach((b) => b.classList.toggle('on', b.dataset.v === cfg.zone.size));
+    $('zone-box').classList.toggle('remote-off', !cfg.zone.on);
+  };
+  const saveZone = () => { save('zone', cfg.zone); pushZone(); segs(); };
+  $('zone-on').checked = !!cfg.zone.on;
+  $('zone-on').onchange = (e) => { cfg.zone.on = e.target.checked; saveZone(); };
+  document.querySelectorAll('#zone-corner button').forEach((b) => { b.onclick = () => { cfg.zone.corner = b.dataset.v; saveZone(); }; });
+  document.querySelectorAll('#zone-size button').forEach((b) => { b.onclick = () => { cfg.zone.size = b.dataset.v; saveZone(); }; });
+  $('zone-show').onclick = () => {
+    zoneShowUntil = Date.now() + 10000; pushZone(); closeMenu();
+    setTimeout(pushZone, 10050);
+  };
+  $('flip-on').checked = !!cfg.flip;
+  $('flip-on').onchange = (e) => { cfg.flip = e.target.checked; save('flip', cfg.flip); pushCfg(); };
+  segs(); pushZone();
 
   // ---- silenzio, schermo fissato, uscita
   $('pin-on').checked = !!cfg.pin;

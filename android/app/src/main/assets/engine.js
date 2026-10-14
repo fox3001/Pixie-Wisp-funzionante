@@ -209,17 +209,34 @@ class Component extends DCLogic {
     const BL = 0.26;
     const ptr = { active: false, touch: false, x: VX, y: 260 };
     const view = { s: 1, ox: 0, oy: 0 };
+    // angolo "coperto" (dove compare il pallino del microfono): la creatura non ci entra mai
+    // e l'angolo resta sempre nero. zone = rettangolo in coordinate della scena, o null.
+    let zone = null;
+    const zoneDist = (x, y, z) => {
+      // distanza (sullo schermo, in unita' di scena) tra il centro proiettato e la zona
+      const s = scaleAt(z), px = VX + (x - VX) * s, py = VY + (y - VY) * s;
+      const nx = clamp(px, zone.x0, zone.x1), ny = clamp(py, zone.y0, zone.y1);
+      return { d: Math.hypot(px - nx, py - ny), dx: px - nx, dy: py - ny, s: s };
+    };
+    const zoneR = (z) => R * BODY * 1.35 * scaleAt(z) + 10;   // corpo + un po' di bagliore
+    const inZone = (x, y, z) => !!zone && zoneDist(x, y, z).d < zoneR(z) * 1.15;
 
     // nuovo punto da raggiungere, anche in profondita'
     const newTarget = () => {
-      C.tz = rnd(0, DEPTH);
-      const rg = rangeAt(C.tz, true);
-      C.tx = rnd(rg.x0, Math.max(rg.x0, rg.x1)); C.ty = rnd(rg.y0, Math.max(rg.y0, rg.y1));
+      for (let k = 0; k < 12; k++) {
+        C.tz = rnd(0, DEPTH);
+        const rg = rangeAt(C.tz, true);
+        C.tx = rnd(rg.x0, Math.max(rg.x0, rg.x1)); C.ty = rnd(rg.y0, Math.max(rg.y0, rg.y1));
+        if (!inZone(C.tx, C.ty, C.tz)) break;
+      }
     };
     const smallTarget = () => {
-      C.tz = clamp(C.z + rnd(-90, 90), 0, DEPTH);
-      const rg = rangeAt(C.tz, true);
-      C.tx = clamp(C.x + rnd(-120, 120), rg.x0, Math.max(rg.x0, rg.x1)); C.ty = clamp(C.y + rnd(-60, 60), rg.y0, Math.max(rg.y0, rg.y1));
+      for (let k = 0; k < 12; k++) {
+        C.tz = clamp(C.z + rnd(-90, 90), 0, DEPTH);
+        const rg = rangeAt(C.tz, true);
+        C.tx = clamp(C.x + rnd(-120, 120), rg.x0, Math.max(rg.x0, rg.x1)); C.ty = clamp(C.y + rnd(-60, 60), rg.y0, Math.max(rg.y0, rg.y1));
+        if (!inZone(C.tx, C.ty, C.tz)) break;
+      }
     };
     C.turnT = 0; C.pitchT = 0;
     const Bh = { kind: 'face', t: 0, dur: 1.5, next: 0 };
@@ -488,6 +505,21 @@ class Component extends DCLogic {
           S.mode = 'normal'; S.t = 0; S.alpha = 1; S.tint = 0; S.squint = 0;
           trail = []; tongues = []; sparks = []; S.blinkT = 0; S.blinkIn = rnd(2, 5);
           Bh.kind = 'face'; Bh.t = 0; Bh.dur = rnd(1.2, 2.5);
+        }
+      }
+
+      // l'angolo coperto respinge la creatura (morbido da lontano, rigido da vicino)
+      if (zone && bodyVisible()) {
+        const q = zoneDist(C.x, C.y, C.z), rr = zoneR(C.z);
+        if (q.d < rr * 1.6) {
+          let ux = q.dx, uy = q.dy, l = Math.hypot(ux, uy);
+          if (l < 1e-3) { ux = VX - (zone.x0 + zone.x1) / 2; uy = VY - (zone.y0 + zone.y1) / 2; l = Math.hypot(ux, uy) || 1; }
+          ux /= l; uy /= l;
+          const push = (rr * 1.6 - q.d) * 9;
+          C.vx += ux * push * dt / q.s; C.vy += uy * push * dt / q.s;
+          if (q.d < rr) { C.x += ux * (rr - q.d) / q.s; C.y += uy * (rr - q.d) / q.s; }
+          if (S.mode === 'ciao') { S.bx += ux * Math.max(0, rr - q.d) / q.s; S.by += uy * Math.max(0, rr - q.d) / q.s; }
+          if (Bh.kind === 'bump' && q.d < rr * 1.2) calmAfter();
         }
       }
 
@@ -762,10 +794,19 @@ class Component extends DCLogic {
       }
       const s = Math.min(cw / LW, ch / LH);
       view.s = s; view.ox = (cw - LW * s) / 2; view.oy = (ch - LH * s) / 2;
+      const Z = self._zone;
+      let zpx = null;
+      if (Z && Z.on) {
+        // misure in dp (pixel CSS) -> pixel del canvas -> unita' di scena
+        const k = cw / cssW, zw = Z.w * k, zh = Z.h * k;
+        const right = Z.corner === 'tr' || Z.corner === 'br', bottom = Z.corner === 'bl' || Z.corner === 'br';
+        zpx = { x: right ? cw - zw : 0, y: bottom ? ch - zh : 0, w: zw, h: zh, cx: right ? cw : 0, cy: bottom ? ch : 0 };
+        zone = { x0: (zpx.x - view.ox) / s, y0: (zpx.y - view.oy) / s, x1: (zpx.x + zw - view.ox) / s, y1: (zpx.y + zh - view.oy) / s };
+      } else zone = null;
 
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
-      ctx.fillStyle = '#04060b'; ctx.fillRect(0, 0, cw, ch);
+      ctx.fillStyle = '#000'; ctx.fillRect(0, 0, cw, ch);
       ctx.setTransform(s, 0, 0, s, view.ox, view.oy);
       // rete di sicurezza: niente viene disegnato fuori dalla scatola
       ctx.save();
@@ -1045,6 +1086,19 @@ class Component extends DCLogic {
       }
       ctx.restore();
       ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+      if (zpx) {
+        // angolo coperto: nero pieno sulla zona, che sfuma dolcemente verso il resto della scena
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        const r0 = Math.hypot(zpx.w, zpx.h), r1 = r0 * 2.2;
+        const g = ctx.createRadialGradient(zpx.cx, zpx.cy, 0, zpx.cx, zpx.cy, r1);
+        g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(r0 / r1, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g; ctx.fillRect(0, 0, cw, ch);
+        if (Z.show) {
+          // anteprima: dove mettere il nastro
+          ctx.setLineDash([10, 8]); ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,220,120,0.95)';
+          ctx.strokeRect(zpx.x + 2, zpx.y + 2, zpx.w - 4, zpx.h - 4); ctx.setLineDash([]);
+        }
+      }
     };
 
     let last = performance.now();
@@ -1065,6 +1119,8 @@ class Component extends DCLogic {
   window.Wisp = {
     start(canvas) { wisp._cv = canvas; wisp._audio(); wisp._run(); },
     unlockAudio() { wisp._audio(); },
+    // angolo coperto: { on, corner: 'tr'|'tl'|'br'|'bl', w, h (dp), show }
+    setZone(z) { wisp._zone = z; },
     command(cmd) {
       wisp._audio();
       if (cmd === 'crucio') wisp._crucioCmd = true;

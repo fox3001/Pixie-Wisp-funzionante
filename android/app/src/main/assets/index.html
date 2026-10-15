@@ -210,7 +210,7 @@
   };
 
   // ---- creatura
-  Wisp.config({ grandezza: 5 / 3 });   // creatura piu' grande di 2/3
+  Wisp.config({ grandezza: 1.37 });   // creatura piu' grande (era 5/3, poi -0,3)
   Wisp.start($('cv'));
   let lastCmd = '', lastAt = 0;
   const run = (cmd) => {

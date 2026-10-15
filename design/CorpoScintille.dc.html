@@ -725,7 +725,7 @@ class Component extends DCLogic {
         const EB = 1.0;    // mezza altezza della parte luminosa del corpo (con le fiammelle in cima), in R
         if (S.zg == null) {
           const kWant = 2 * scaleAt(S.bz), kFit = Math.min((LH / 2 - 8 - IN) / (R * EB * 1.12), (LW / 2 - 8 - IN) / (R * EB * 1.55));
-          S.zg = FOC / Math.min(kWant, kFit) - FOC;
+          S.zg = FOC / Math.min(kWant, kFit * 1.15) - FOC;   // un pochino piu' grande: il bagliore esterno sfuma nei bordi
         }
         const t = S.t, Zg = S.zg;
         S.sayIn -= dt;
@@ -768,9 +768,9 @@ class Component extends DCLogic {
           // in volo la scia e le fiammelle salgono piu' in alto: margine piu' largo
           const fly = 1 + 0.15 * smoothst(0, 0.12, t) * (1 - smoothst(0.3, 0.45, t));
           const hx = R * EB * Math.max(1, S.spx), hy = R * EB * Math.max(1, S.spy) * fly;
-          const sMax = Math.min((LH / 2 - 6 - IN) / hy, (LW / 2 - 6 - IN) / hx);
+          const sMax = 1.15 * Math.min((LH / 2 - 6 - IN) / hy, (LW / 2 - 6 - IN) / hx);
           if (scaleAt(C.z) > sMax) C.z = FOC / sMax - FOC;
-          const sC = scaleAt(C.z), lx = Math.max(0, (LW / 2 - 6 - IN) / sC - hx), ly = Math.max(0, (LH / 2 - 6 - IN) / sC - hy);
+          const sC = scaleAt(C.z), lx = Math.max(0, (LW / 2 - 6 - IN * 0.5) / sC - hx), ly = Math.max(0, (LH / 2 - 6 - IN * 0.5) / sC - hy);
           C.x = clamp(C.x, VX - lx, VX + lx); C.y = clamp(C.y, VY - ly, VY + ly);
           if (S.smear) { S.smear.x = clamp(S.smear.x, VX - lx, VX + lx); S.smear.y1 = Math.min(S.smear.y1, C.y); S.smear.z = Math.max(S.smear.z, C.z); }
         }
@@ -795,7 +795,8 @@ class Component extends DCLogic {
             // abbastanza in profondita' da stare davvero sul lato destro anche se la creatura e' grande o lo schermo stretto
             // (centro ad almeno il 70% della larghezza dello schermo)
             const MCv = R * BODY * 1.05, sReq = 0.3 * LW / MCv;
-            const tz0 = clamp(FOC / Math.min(1, sReq) - FOC, Math.max(60, zMinFor(BODY * 1.1)), DEPTH * 0.8);
+            // verso il fondo del box: li' c'e' la mano che lo gratta
+            const tz0 = clamp(Math.max(FOC / Math.min(1, sReq) - FOC, DEPTH * 0.72), Math.max(60, zMinFor(BODY * 1.1)), DEPTH * 0.85);
             // se c'e' l'angolo coperto (app/sito), scelgo un punto sul lato destro che non ci finisca dentro
             const blocked = (x, y, z) => typeof inZone === 'function' && inZone(x, y, z);
             for (const zz of [tz0, tz0 + 80, tz0 + 160, tz0 + 260]) {

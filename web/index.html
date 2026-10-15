@@ -84,7 +84,7 @@
 
 <div id="menu" role="dialog" aria-label="Menu">
   <div class="top">
-    <h1>Pixie Wisp <span style="font-weight:400;font-size:13px">· versione 14/10 22:50</span></h1>
+    <h1>Pixie Wisp <span style="font-weight:400;font-size:13px">· versione 15/10 02:30</span></h1>
     <button class="primary" id="back">Torna al wisp</button>
   </div>
   <div class="grid">
@@ -94,6 +94,8 @@
       <div class="row"><span class="label">Schermo sempre acceso</span><span class="status" id="st-wake">…</span></div>
       <div class="row"><span class="label">Schermo intero<br><span class="hint" id="fs-why"></span></span><span class="status" id="st-full">…</span></div>
       <div class="row"><button id="full-btn">Vai a schermo intero</button></div>
+      <div class="row"><button id="film-btn">Modalità film (prova)</button></div>
+      <p class="hint">Modalità film: la creatura si apre nel lettore video a tutto schermo, come un film (tutte le barre spariscono). In prova: il telecomando lì dentro potrebbe non funzionare; per uscire tocca lo schermo e la X.</p>
     </div>
 
     <div class="card">
@@ -201,20 +203,47 @@
   // ---- schermo intero: su iPad nasconde la barra di Safari (indirizzo, pulsanti) e la barra di stato.
   // Si puo' chiedere solo dopo un tocco: lo rifa' a ogni tocco se nel frattempo e' uscita.
   const isFull = () => !!(document.fullscreenElement || document.webkitFullscreenElement || document.webkitCurrentFullScreenElement);
-  // Safari su iPad a volte rifiuta la pagina intera ma accetta il body (o viceversa): prova in ordine
+  // tutti i tentativi nello stesso tocco (Safari accetta la richiesta solo durante il tocco)
   let fullErr = '';
-  const tryFull = (els) => {
-    const el = els.shift();
-    if (!el) return;
-    const f = el.requestFullscreen || el.webkitRequestFullscreen || el.webkitRequestFullScreen;
-    if (!f) { fullErr = 'non supportato'; tryFull(els); return; }
-    try {
-      const r = f.call(el);
-      if (r && r.then) r.catch((e) => { fullErr = (e && e.message) || 'rifiutato'; tryFull(els); });
-      else setTimeout(() => { if (!isFull()) tryFull(els); }, 250);
-    } catch (e) { fullErr = (e && e.message) || 'errore'; tryFull(els); }
+  const goFull = () => {
+    if (isFull()) return;
+    const tried = [];
+    for (const el of [document.documentElement, document.body, $('cv')]) {
+      for (const name of ['webkitRequestFullscreen', 'webkitRequestFullScreen', 'requestFullscreen']) {
+        const f = el[name];
+        if (typeof f !== 'function') continue;
+        tried.push(name);
+        try {
+          const r = f.call(el);
+          if (r && r.catch) r.catch((e) => { fullErr = name + ': ' + ((e && e.message) || 'rifiutato'); status(); });
+          return;
+        } catch (e) { fullErr = name + ': ' + ((e && e.message) || 'errore'); }
+      }
+    }
+    if (!tried.length) fullErr = 'questo browser non permette lo schermo intero alle pagine (fullscreenEnabled=' + (document.fullscreenEnabled || document.webkitFullscreenEnabled || false) + ')';
   };
-  const goFull = () => { if (!isFull()) tryFull([document.body, document.documentElement]); };
+  // MODALITA' FILM (prova): la creatura diventa un "video" e si apre nel lettore a tutto schermo dell'iPad,
+  // come un film: spariscono tutte le barre. Il telecomando li' dentro potrebbe non arrivare.
+  let filmV = null;
+  const film = () => {
+    const cv = $('cv');
+    if (!filmV) {
+      if (!cv.captureStream) { fullErr = 'modalità film non disponibile (captureStream)'; status(); return; }
+      filmV = document.createElement('video');
+      filmV.muted = true; filmV.playsInline = true; filmV.setAttribute('playsinline', ''); filmV.autoplay = true;
+      filmV.style.cssText = 'position:fixed;left:0;top:0;width:2px;height:2px;opacity:0.01;pointer-events:none';
+      document.body.appendChild(filmV);
+      filmV.srcObject = cv.captureStream(30);
+      try { const r = filmV.play(); if (r && r.catch) r.catch(() => {}); } catch (e) {}
+      $('film-btn').textContent = 'Pronto: tocca di nuovo per la modalità film';
+      return;
+    }
+    try {
+      if (filmV.webkitEnterFullscreen) filmV.webkitEnterFullscreen();
+      else if (filmV.requestFullscreen) filmV.requestFullscreen();
+      closeMenu();
+    } catch (e) { fullErr = 'modalità film: ' + ((e && e.message) || 'errore'); status(); }
+  };
   $('go').onclick = () => {
     goFull();
     Wisp.unlockAudio();
@@ -238,6 +267,7 @@
   });
   $('back').onclick = () => { closeMenu(); goFull(); };
   $('full-btn').onclick = () => { closeMenu(); goFull(); };
+  $('film-btn').onclick = film;
   document.addEventListener('fullscreenchange', () => status());
   document.addEventListener('webkitfullscreenchange', () => status());
   // pulsanti di prova ed elenco dei comandi vocali

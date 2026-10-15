@@ -27,7 +27,7 @@ a{color:#9fe6ff}a:hover{color:#d6f5ff}
 </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;lunghezza&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0.5,&quot;max&quot;:2,&quot;step&quot;:0.05,&quot;default&quot;:2,&quot;section&quot;:&quot;Fiamma&quot;},&quot;occhi&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;attuale&quot;,&quot;maschera&quot;,&quot;maschera noBK&quot;,&quot;lanterna&quot;,&quot;nucleo&quot;,&quot;cartoon&quot;,&quot;anello&quot;,&quot;sfera&quot;,&quot;ombra&quot;,&quot;mix&quot;],&quot;default&quot;:&quot;maschera&quot;,&quot;section&quot;:&quot;Occhi&quot;},&quot;saluta&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;section&quot;:&quot;Reazioni&quot;},&quot;crucio&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;section&quot;:&quot;Reazioni&quot;},&quot;finite&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;section&quot;:&quot;Reazioni&quot;},&quot;incendio&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;section&quot;:&quot;Reazioni&quot;},&quot;gelatina&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;section&quot;:&quot;Reazioni&quot;},&quot;accio&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;section&quot;:&quot;Reazioni&quot;},&quot;vieni&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;section&quot;:&quot;Reazioni&quot;},&quot;mescola&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;mercurio&quot;,&quot;vortice&quot;,&quot;frullato&quot;,&quot;olio&quot;],&quot;default&quot;:&quot;mercurio&quot;,&quot;section&quot;:&quot;Reazioni&quot;},&quot;corpo&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;strati&quot;,&quot;plasma&quot;,&quot;scintille&quot;,&quot;candela&quot;],&quot;default&quot;:&quot;scintille&quot;,&quot;section&quot;:&quot;Corpo&quot;},&quot;$preview&quot;:{&quot;width&quot;:1140,&quot;height&quot;:660}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;lunghezza&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0.5,&quot;max&quot;:2,&quot;step&quot;:0.05,&quot;default&quot;:2,&quot;section&quot;:&quot;Fiamma&quot;},&quot;occhi&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;attuale&quot;,&quot;maschera&quot;,&quot;maschera noBK&quot;,&quot;lanterna&quot;,&quot;nucleo&quot;,&quot;cartoon&quot;,&quot;anello&quot;,&quot;sfera&quot;,&quot;ombra&quot;,&quot;mix&quot;],&quot;default&quot;:&quot;maschera&quot;,&quot;section&quot;:&quot;Occhi&quot;},&quot;saluta&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;section&quot;:&quot;Reazioni&quot;},&quot;crucio&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;section&quot;:&quot;Reazioni&quot;},&quot;finite&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;section&quot;:&quot;Reazioni&quot;},&quot;incendio&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;section&quot;:&quot;Reazioni&quot;},&quot;gelatina&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;section&quot;:&quot;Reazioni&quot;},&quot;accio&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;section&quot;:&quot;Reazioni&quot;},&quot;vieni&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;section&quot;:&quot;Reazioni&quot;},&quot;mescola&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;mercurio&quot;,&quot;vortice&quot;,&quot;frullato&quot;,&quot;olio&quot;],&quot;default&quot;:&quot;mercurio&quot;,&quot;section&quot;:&quot;Reazioni&quot;},&quot;corpo&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;strati&quot;,&quot;plasma&quot;,&quot;scintille&quot;,&quot;candela&quot;],&quot;default&quot;:&quot;scintille&quot;,&quot;section&quot;:&quot;Corpo&quot;},&quot;$preview&quot;:{&quot;width&quot;:1140,&quot;height&quot;:660}}">
 class Component extends DCLogic {
   componentWillUnmount() {
     this._halt(); this._detach(); this._cv = null;
@@ -174,27 +174,34 @@ class Component extends DCLogic {
     const M = 0.62 * 1.9 * R * BODY * 1.06 + 4;
     // tiene il centro dentro la scatola e rimbalza sui bordi
     // zona in cui puo' stare il centro alla profondita' z (piu' lontano = piu' piccolo = piu' spazio)
+    // margine in piu' tutto attorno: la creatura sta in un'area un po' piu' piccola della scena
+    // (i bordi dello schermo nel box sono coperti dal nastro)
+    const IN = LH * 0.07;
+    // quanto puo' venire avanti al massimo perche' il corpo (ext = mezza altezza in R) stia tutto dentro, bordo compreso
+    const zMinFor = (ext) => Math.max(0, FOC / Math.max(0.05, (LH / 2 - IN - 4) / (R * ext)) - FOC);
     const rangeAt = (z, comfy) => {
       const s = scaleAt(z);
       // zona "comoda": tutto il corpo resta lontano dalle pareti (ci si avvicina solo per sbatterci)
       if (comfy) {
-        const MC = R * BODY * 1.05;
+        const MC = R * BODY * 1.05 + IN;
         return { x0: VX - VX / s + MC, x1: VX + VX / s - MC, y0: VY - VY / s + MC * 0.95, y1: VY + VY / s - MC * 0.8 };
       }
       // il centro si ferma quando l'AREA DEGLI OCCHI tocca la parete (non il bagliore)
       const MX = 0.86 * R * Math.sin(Math.min(1.5, 0.46 + 0.95 * Math.abs(C.turn || 0))) + 0.25 * R * 1.15 + 2;
-      const MT = 0.36 * R, MB = 0.5 * R;
-      return { x0: VX - VX / s + MX, x1: VX + VX / s - MX, y0: VY - VY / s + MT, y1: VY + VY / s - MB };
+      const MT = 0.36 * R + IN, MB = 0.5 * R + IN;
+      return { x0: VX - VX / s + MX + IN, x1: VX + VX / s - MX - IN, y0: VY - VY / s + MT, y1: VY + VY / s - MB };
     };
+    // tiene il centro dentro la zona comoda SENZA rimbalzi: vicino al bordo viene richiamato piano verso l'interno,
+    // e al limite si ferma morbido (mai un urto visibile contro le pareti)
     const box = () => {
-      const rg = rangeAt(C.z);
-      let hit = null;
-      if (C.x < rg.x0) { C.x = rg.x0; C.vx = Math.abs(C.vx) * 0.5; hit = 'left'; }
-      else if (C.x > rg.x1) { C.x = rg.x1; C.vx = -Math.abs(C.vx) * 0.5; hit = 'right'; }
-      if (C.y < rg.y0) { C.y = rg.y0; C.vy = Math.abs(C.vy) * 0.5; hit = hit || 'top'; }
-      else if (C.y > rg.y1) { C.y = rg.y1; C.vy = -Math.abs(C.vy) * 0.5; hit = hit || 'bottom'; }
-      if (C.z < 0) { C.z = 0; C.vz = Math.abs(C.vz) * 0.5; } else if (C.z > DEPTH) { C.z = DEPTH; C.vz = -Math.abs(C.vz) * 0.5; }
-      return hit;
+      const rc = rangeAt(C.z, true), rg = rangeAt(C.z);
+      const dt0 = Math.min(0.05, S.dt || 0.016);
+      if (C.x < rc.x0) C.vx += (rc.x0 - C.x) * 14 * dt0; else if (C.x > rc.x1) C.vx -= (C.x - rc.x1) * 14 * dt0;
+      if (C.y < rc.y0) C.vy += (rc.y0 - C.y) * 14 * dt0; else if (C.y > rc.y1) C.vy -= (C.y - rc.y1) * 14 * dt0;
+      if (C.x < rg.x0) { C.x = rg.x0; C.vx = Math.max(0, C.vx); } else if (C.x > rg.x1) { C.x = rg.x1; C.vx = Math.min(0, C.vx); }
+      if (C.y < rg.y0) { C.y = rg.y0; C.vy = Math.max(0, C.vy); } else if (C.y > rg.y1) { C.y = rg.y1; C.vy = Math.min(0, C.vy); }
+      if (C.z < 0) { C.z = 0; C.vz = Math.max(0, C.vz); } else if (C.z > DEPTH) { C.z = DEPTH; C.vz = Math.min(0, C.vz); }
+      return null;
     };
     const rnd = (a, b) => a + Math.random() * (b - a);
     const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -331,13 +338,8 @@ class Component extends DCLogic {
         // raramente si gira del tutto per guardarsi dietro: per un attimo gli occhi spariscono
         Bh.kind = 'behind'; Bh.dur = rnd(0.7, 1.4); Bh.dir = Math.random() < 0.5 ? -1 : 1;
       } else {
-        // raramente va a sbattere contro una parete laterale o il soffitto
-        const rg = rangeAt(C.z), wall = ['left', 'right', 'top'][Math.floor(Math.random() * 3)];
-        C.tz = C.z;
-        if (wall === 'left') { C.tx = rg.x0 - 260; C.ty = C.y + rnd(-40, 40); }
-        else if (wall === 'right') { C.tx = rg.x1 + 260; C.ty = C.y + rnd(-40, 40); }
-        else { C.tx = C.x + rnd(-60, 60); C.ty = rg.y0 - 260; }
-        Bh.kind = 'bump'; Bh.dur = 3; C.sp = rnd(1.8, 2.4);
+        // (niente piu' urti contro le pareti: nel box col vetro sembravano errori) gironzola piano
+        Bh.kind = 'drift'; Bh.dur = rnd(3, 6); C.sp = rnd(0.18, 0.32); smallTarget();
       }
     };
     // dopo uno scatto o un urto torna calmo
@@ -618,7 +620,9 @@ class Component extends DCLogic {
             // niente urti: il punto d'arrivo sta ben dentro la scatola sia alla profondita' di partenza
             // sia a quella d'arrivo (la piu' vicina e' la piu' stretta), con margine verso il centro
             const rg = rangeAt(Math.min(C.z, C.tz), true);
-            C.tx = VX + (rnd(rg.x0, Math.max(rg.x0, rg.x1)) - VX) * 0.72; C.ty = VY + (rnd(rg.y0, Math.max(rg.y0, rg.y1)) - VY) * 0.65;
+            // spazio in alto per le fiamme sulla testa: il fuoco non deve arrivare al bordo
+            const fy0 = Math.min(rg.y1, rg.y0 + R * 0.75);
+            C.tx = VX + (rnd(rg.x0, Math.max(rg.x0, rg.x1)) - VX) * 0.72; C.ty = VY + (rnd(fy0, Math.max(fy0, rg.y1)) - VY) * 0.65;
             S.runT = rnd(0.55, 0.85);
           }
           const dx = C.tx - C.x, dy = C.ty - C.y, d = Math.max(1, Math.hypot(dx, dy)), ac = 3000 * Math.min(1, d / 120);
@@ -628,7 +632,7 @@ class Component extends DCLogic {
           // se si avvicina troppo a una parete viene richiamato verso l'interno prima di toccarla
           const rc = rangeAt(C.z, true), mg = R * 0.4;
           if (C.x < rc.x0 + mg) C.vx += (rc.x0 + mg - C.x) * 40 * dt; else if (C.x > rc.x1 - mg) C.vx -= (C.x - rc.x1 + mg) * 40 * dt;
-          if (C.y < rc.y0 + mg) C.vy += (rc.y0 + mg - C.y) * 40 * dt; else if (C.y > rc.y1 - mg) C.vy -= (C.y - rc.y1 + mg) * 40 * dt;
+          if (C.y < rc.y0 + mg + R * 0.6) C.vy += (rc.y0 + mg + R * 0.6 - C.y) * 40 * dt; else if (C.y > rc.y1 - mg) C.vy -= (C.y - rc.y1 + mg) * 40 * dt;
           C.x = clamp(C.x, rc.x0, Math.max(rc.x0, rc.x1)); C.y = clamp(C.y, rc.y0, Math.max(rc.y0, rc.y1));
           C.z = clamp(C.z, 0, DEPTH);
           C.turnT = clamp(C.vx / 260, -1, 1); C.pitchT = clamp(C.vy / 300, -0.8, 0.8) - 0.25;
@@ -658,7 +662,7 @@ class Component extends DCLogic {
         } else endFx();
       } else if (S.mode === 'gelatina') {
         // GELATINA: si scioglie imbarazzato fino a restare solo gli occhi, poi si ricompone a molla
-        const t = S.t, floorY = VY + VY / scaleAt(C.z) - 6;
+        const t = S.t, floorY = VY + VY / scaleAt(C.z) - 6 - IN * 2.2;
         S.sayIn -= dt;
         C.vx = 0; C.vy = 0;
         if (t < 0.7) {
@@ -706,7 +710,7 @@ class Component extends DCLogic {
         // sul vetro diventa grande il doppio di com'era, ma il corpo (con lo schiacciamento) resta SEMPRE dentro lo schermo
         const EB = 1.0;    // mezza altezza della parte luminosa del corpo (con le fiammelle in cima), in R
         if (S.zg == null) {
-          const kWant = 2 * scaleAt(S.bz), kFit = Math.min((LH / 2 - 8) / (R * EB * 1.12), (LW / 2 - 8) / (R * EB * 1.55));
+          const kWant = 2 * scaleAt(S.bz), kFit = Math.min((LH / 2 - 8 - IN) / (R * EB * 1.12), (LW / 2 - 8 - IN) / (R * EB * 1.55));
           S.zg = FOC / Math.min(kWant, kFit) - FOC;
         }
         const t = S.t, Zg = S.zg;
@@ -748,9 +752,9 @@ class Component extends DCLogic {
           // in volo la scia e le fiammelle salgono piu' in alto: margine piu' largo
           const fly = 1 + 0.15 * smoothst(0, 0.12, t) * (1 - smoothst(0.3, 0.45, t));
           const hx = R * EB * Math.max(1, S.spx), hy = R * EB * Math.max(1, S.spy) * fly;
-          const sMax = Math.min((LH / 2 - 6) / hy, (LW / 2 - 6) / hx);
+          const sMax = Math.min((LH / 2 - 6 - IN) / hy, (LW / 2 - 6 - IN) / hx);
           if (scaleAt(C.z) > sMax) C.z = FOC / sMax - FOC;
-          const sC = scaleAt(C.z), lx = Math.max(0, (LW / 2 - 6) / sC - hx), ly = Math.max(0, (LH / 2 - 6) / sC - hy);
+          const sC = scaleAt(C.z), lx = Math.max(0, (LW / 2 - 6 - IN) / sC - hx), ly = Math.max(0, (LH / 2 - 6 - IN) / sC - hy);
           C.x = clamp(C.x, VX - lx, VX + lx); C.y = clamp(C.y, VY - ly, VY + ly);
           if (S.smear) { S.smear.x = clamp(S.smear.x, VX - lx, VX + lx); S.smear.y1 = Math.min(S.smear.y1, C.y); S.smear.z = Math.max(S.smear.z, C.z); }
         }
@@ -775,7 +779,7 @@ class Component extends DCLogic {
             // abbastanza in profondita' da stare davvero sul lato destro anche se la creatura e' grande o lo schermo stretto
             // (centro ad almeno il 70% della larghezza dello schermo)
             const MCv = R * BODY * 1.05, sReq = 0.3 * LW / MCv;
-            const tz0 = clamp(FOC / Math.min(1, sReq) - FOC, 60, DEPTH * 0.6);
+            const tz0 = clamp(FOC / Math.min(1, sReq) - FOC, Math.max(60, zMinFor(BODY * 1.1)), DEPTH * 0.8);
             // se c'e' l'angolo coperto (app/sito), scelgo un punto sul lato destro che non ci finisca dentro
             const blocked = (x, y, z) => typeof inZone === 'function' && inZone(x, y, z);
             for (const zz of [tz0, tz0 + 80, tz0 + 160, tz0 + 260]) {
@@ -902,6 +906,13 @@ class Component extends DCLogic {
         }
       }
 
+      // mai troppo avanti: il corpo (e nell'incendio anche le fiamme sulla testa) resta dentro lo schermo
+      if (bodyVisible() && S.mode !== 'accio') {
+        const zmin = zMinFor(S.mode === 'incendio' ? 1.9 : BODY * 1.1);
+        if (C.tz < zmin) C.tz = zmin;
+        if (C.z < zmin) { C.z += (zmin - C.z) * Math.min(1, dt * 5); if (C.vz < 0) C.vz = 0; }
+      }
+
       // testa: turn e pitch
       if (S.mode !== 'normal' && !FX[S.mode]) { C.turnT = 0; C.pitchT = 0; C.shx = 0; C.shy = 0; }
       S.brow += (S.browT - S.brow) * Math.min(1, dt * 9);
@@ -950,7 +961,7 @@ class Component extends DCLogic {
       }
       // gocce e bolle di gelatina
       {
-        const floorY = VY + VY / scaleAt(C.z) - 6;
+        const floorY = VY + VY / scaleAt(C.z) - 6 - IN * 2.2;
         const mm = clamp(S.melt, 0, 1), msx = 1 + 0.9 * mm, msy = 1 - 0.8 * mm, yb = C.y + R * 0.9;
         const reform = S.mode !== 'gelatina' || S.t >= 7.5;
         let m = 0;
@@ -994,12 +1005,10 @@ class Component extends DCLogic {
 
       // scia, spina, lingue
       if (bodyVisible()) {
-        // la scia sale ma si ferma contro le pareti e il soffitto della scatola
+        // la scia sale e si spegne da sola (niente urti contro pareti e soffitto)
         for (const p of trail) {
           // ogni punto della scia resta alla sua profondita' e urta le pareti di quella profondita'
-          const sp = scaleAt(p.z), pl = VX - VX / sp + 4, pr = VX + VX / sp - 4, ptp = VY - VY / sp + 4;
           p.age += dt; p.y -= 150 * dt; p.x += (n1(p.seed + time * 2) - 0.5) * 60 * dt;
-          if (p.y < ptp) { p.y = ptp; p.x += (p.x >= C.x ? 1 : -1) * 90 * dt; } p.x = clamp(p.x, pl, pr);
         }
         while (trail.length > 2 && trail[trail.length - 1].age > 0.5) trail.pop();
         trail.unshift({ x: C.x, y: C.y, z: C.z, age: 0, seed: Math.random() * 100 });
@@ -1029,7 +1038,6 @@ class Component extends DCLogic {
         const ex = C.x + Rs * Math.sin(Lg) * Math.cos(B), ey = C.y - Rs * Math.sin(B) + (S.eyeDy || 0);
         for (const p of tr) {
           p.age += dt; p.y -= 110 * dt; p.x += (n1(p.seed + time * 2) - 0.5) * 40 * dt;
-          if (p.y < WT) { p.y = WT; p.x += (p.x >= C.x ? 1 : -1) * 90 * dt; } p.x = clamp(p.x, WL, WR);
         }
         while (tr.length > 2 && tr[tr.length - 1].age > 0.45) tr.pop();
         tr.unshift({ x: ex, y: ey, age: 0, seed: Math.random() * 100 });
@@ -1057,10 +1065,6 @@ class Component extends DCLogic {
         p.life -= dt; if (p.life <= 0) continue;
         p.x += p.vx * dt; p.y += p.vy * dt;
         const dm = Math.pow(0.88, f60); p.vx *= dm; p.vy *= dm;
-        // rimbalza sulle pareti tenendo conto del suo alone
-        const vr = Math.min(LH / 2, p.r * (p.life / p.max) * 2.45);
-        if (p.x < vr) { p.x = vr; p.vx = Math.abs(p.vx); } else if (p.x > LW - vr) { p.x = LW - vr; p.vx = -Math.abs(p.vx); }
-        if (p.y < vr) { p.y = vr; p.vy = Math.abs(p.vy); } else if (p.y > LH - vr) { p.y = LH - vr; p.vy = -Math.abs(p.vy); }
         exp[n++] = p;
       }
       exp.length = n;
@@ -1197,11 +1201,7 @@ class Component extends DCLogic {
             }
           }
           p.x += p.vx * dts; p.y += p.vy * dts;
-          // pareti alla profondita' della fiammella, non a quella attuale della creatura
-          const pr = p.r * 0.5, spz = scaleAt(p.z), wl = VX - VX / spz, wr = VX + VX / spz, wt = VY - VY / spz;
-          if (p.x < wl + pr) { p.x = wl + pr; p.vx = Math.abs(p.vx) * 0.15; p.vy += (Math.random() - 0.5) * 60; }
-          else if (p.x > wr - pr) { p.x = wr - pr; p.vx = -Math.abs(p.vx) * 0.15; p.vy += (Math.random() - 0.5) * 60; }
-          if (p.y < wt + pr) { p.y = wt + pr; p.vy = Math.abs(p.vy) * 0.1; p.vx += (p.x >= C.x ? 1 : -1) * rnd(40, 120); p.r *= 1.01; }
+          // niente urti contro le pareti: verso i bordi la luce sfuma da sola (vedi sfumatura dei bordi)
           fire[n++] = p;
         }
         fire.length = n;
@@ -1300,7 +1300,7 @@ class Component extends DCLogic {
       ctx.translate(VX, VY); ctx.scale(dS, dS); ctx.translate(-VX, -VY);
       // scrollata dopo un urto
       ctx.translate(C.shx || 0, C.shy || 0);
-      SQZ.l = VX - VX / dS; SQZ.r = VX + VX / dS; SQZ.t = VY - VY / dS; SQZ.b = VY + VY / dS; SQZ.zone = 0.5 * R;
+      SQZ.l = VX - VX / dS; SQZ.r = VX + VX / dS; SQZ.t = VY - VY / dS; SQZ.b = VY + VY / dS; SQZ.zone = 0;   // niente piu' schiacciamento contro le pareti
       // ---- ectoplasma: sembra luce ma e' solido
       // contro una parete si schiaccia (piu' corto verso il muro, piu' largo nell'altro verso),
       // staccandosi rimbalza tremolando; negli scatti si allunga un po' nella direzione del moto
@@ -1418,7 +1418,7 @@ class Component extends DCLogic {
         }
         // pozza e gocce di ectoplasma (gelatina)
         if (S.mode === 'gelatina' || drips.length) {
-          const floorY = VY + VY / dS - 6, m = clamp(mlt, 0, 1);
+          const floorY = VY + VY / dS - 6 - IN * 2.2, m = clamp(mlt, 0, 1);
           if (m > 0.02) {
             ctx.save(); ctx.translate(C.x, floorY); ctx.scale(1, 0.32); ctx.translate(-C.x, -floorY);
             blob(cO, C.x, floorY, R * (0.5 + 1.1 * m), 0.32 * m * A);
@@ -1835,6 +1835,18 @@ class Component extends DCLogic {
       }
       ctx.restore();
       ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+      // bordi sfumati nel nero: fumo, scintille e bagliori si spengono dolcemente prima del bordo, mai tagliati
+      {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        const W = cv.width, H = cv.height, f = Math.round(Math.min(W, H) * 0.09);
+        const edge = (x0, y0, x1, y1, rx, ry, rw, rh) => {
+          const g = ctx.createLinearGradient(x0, y0, x1, y1);
+          g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(0.35, 'rgba(0,0,0,0.75)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = g; ctx.fillRect(rx, ry, rw, rh);
+        };
+        edge(0, 0, 0, f, 0, 0, W, f); edge(0, H, 0, H - f, 0, H - f, W, f);
+        edge(0, 0, f, 0, 0, 0, f, H); edge(W, 0, W - f, 0, W - f, 0, f, H);
+      }
     };
 
     let last = performance.now();

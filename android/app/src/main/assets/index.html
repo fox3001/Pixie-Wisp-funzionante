@@ -18,7 +18,10 @@
   html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; }
   body { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
          font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--text); }
-  #cv { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; touch-action: none; }
+  /* la scena sta dentro la zona libera: i bordi dello schermo nel box sono coperti dal nastro */
+  :root { --mt: 48px; --mb: 30px; --ms: 0px; }
+  #cv { position: fixed; display: block; touch-action: none; left: var(--ms); top: var(--mt);
+        width: calc(100vw - 2 * var(--ms)); height: calc(100vh - var(--mt) - var(--mb)); }
 
   /* ---- menu (si apre con doppio tap) ---- */
   #menu { position: fixed; inset: 0; background: var(--panel); display: none; overflow-y: auto;
@@ -107,6 +110,9 @@
 
     <div class="card">
       <h2>Box Pepper's ghost</h2>
+      <div class="row"><span class="label">Margine dai bordi<br><span class="hint">la creatura e i suoi effetti restano lontani dai bordi coperti dal nastro</span></span>
+        <div class="seg" id="mrg"><button data-v="0">No</button><button data-v="1">Piccolo</button><button data-v="2">Medio</button><button data-v="3">Grande</button></div>
+      </div>
       <div class="row">
         <span class="label">Copri l'angolo del microfono<br><span class="hint">la creatura non ci passa mai e l'angolo resta nero: ci metti sopra un pezzetto di nastro nero</span></span>
         <label class="switch"><input type="checkbox" id="zone-on"><span></span></label>
@@ -171,8 +177,18 @@
     keys: load('keys', {}),
     pin: load('pin', true),
     zone: load('zone', { on: true, corner: 'tr', size: 'm' }),
-    flip: load('flip', false)
+    flip: load('flip', false),
+    mrg: load('mrg', 2)
   };
+  // margine dai bordi: [sopra, sotto, lati] in dp
+  const MRG = [[0, 0, 0], [28, 18, 0], [48, 30, 0], [72, 44, 24]];
+  const applyMrg = () => {
+    const m = MRG[cfg.mrg] || MRG[2], r = document.documentElement.style;
+    r.setProperty('--mt', m[0] + 'px'); r.setProperty('--mb', m[1] + 'px'); r.setProperty('--ms', m[2] + 'px');
+    document.querySelectorAll('#mrg button').forEach((b) => b.classList.toggle('on', +b.dataset.v === cfg.mrg));
+  };
+  applyMrg();
+  document.querySelectorAll('#mrg button').forEach((b) => { b.onclick = () => { cfg.mrg = +b.dataset.v; save('mrg', cfg.mrg); applyMrg(); }; });
   // tasti 1-7 gia' assegnati (sono quelli che manda l'app Pixie Remote; codici Android 8..14);
   // "stop" si chiama ora "finite"
   for (const c in cfg.keys) if (cfg.keys[c].action === 'stop') cfg.keys[c].action = 'finite';

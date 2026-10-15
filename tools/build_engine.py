@@ -140,11 +140,11 @@ rep("""      const s = Math.min(cw / LW, ch / LH);
       } else zone = null;
 """)
 rep("      ctx.fillStyle = '#04060b'; ctx.fillRect(0, 0, cw, ch);", "      ctx.fillStyle = '#000'; ctx.fillRect(0, 0, cw, ch);")
-rep("""      ctx.restore();
-      ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+rep("""edge(W, 0, W - f, 0, W - f, 0, f, H);
+      }
     };
-""", """      ctx.restore();
-      ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+""", """edge(W, 0, W - f, 0, W - f, 0, f, H);
+      }
       if (zpx) {
         // angolo coperto: nero pieno sulla zona, che sfuma dolcemente verso il resto della scena
         ctx.setTransform(1, 0, 0, 1, 0, 0);

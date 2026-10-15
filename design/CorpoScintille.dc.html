@@ -775,15 +775,28 @@ class Component extends DCLogic {
             // abbastanza in profondita' da stare davvero sul lato destro anche se la creatura e' grande o lo schermo stretto
             // (centro ad almeno il 70% della larghezza dello schermo)
             const MCv = R * BODY * 1.05, sReq = 0.3 * LW / MCv;
-            const tz = clamp(FOC / Math.min(1, sReq) - FOC, 60, DEPTH * 0.6), rg = rangeAt(tz, true);
-            S.tgt = { x: rg.x1, y: clamp(VY + 10, rg.y0, rg.y1), z: tz };
+            const tz0 = clamp(FOC / Math.min(1, sReq) - FOC, 60, DEPTH * 0.6);
+            // se c'e' l'angolo coperto (app/sito), scelgo un punto sul lato destro che non ci finisca dentro
+            const blocked = (x, y, z) => typeof inZone === 'function' && inZone(x, y, z);
+            for (const zz of [tz0, tz0 + 80, tz0 + 160, tz0 + 260]) {
+              const tz = clamp(zz, 60, DEPTH * 0.8), rg = rangeAt(tz, true);
+              for (const yy of [VY + 10, (VY + 10 + rg.y1) / 2, rg.y1, (VY + rg.y0) / 2, rg.y0]) {
+                const y = clamp(yy, rg.y0, Math.max(rg.y0, rg.y1));
+                if (!S.tgt) S.tgt = { x: rg.x1, y: y, z: tz };
+                if (!blocked(rg.x1, y, tz)) { S.tgt = { x: rg.x1, y: y, z: tz }; break; }
+              }
+              if (!blocked(S.tgt.x, S.tgt.y, S.tgt.z)) break;
+            }
+            S.walk0 = t;
           }
           const dx = S.tgt.x - C.x, dy = S.tgt.y - C.y, d = Math.max(1, Math.hypot(dx, dy));
           const sp = Math.max(45, Math.min(110, d / 3.5)) * Math.min(1, d / 50);   // piano piano, ma ci arriva sempre
           C.vx += (dx / d * sp - C.vx) * Math.min(1, dt * 2); C.vy += (dy / d * sp - C.vy) * Math.min(1, dt * 2);
           C.x += C.vx * dt; C.y += C.vy * dt;
           C.z += (S.tgt.z - C.z) * Math.min(1, dt * 1.2);
-          if (d < 6 && Math.abs(S.tgt.z - C.z) < 8) { S.f2 = 1; S.t0 = t; S.cx = C.x; S.cy = C.y; C.vx = 0; C.vy = 0; self._play('purr'); S.sayIn = 0.9; }
+          // ci arriva sempre; se qualcosa lo trattiene (es. l'angolo coperto) dopo 8 secondi si ferma dov'e'
+          const late = t - (S.walk0 || t) > 8;
+          if ((d < 6 && Math.abs(S.tgt.z - C.z) < 8) || late) { S.f2 = 1; S.t0 = t; S.cx = C.x; S.cy = C.y; C.vx = 0; C.vy = 0; self._play('purr'); S.sayIn = 0.9; }
         } else {
           const u = t - S.t0;
           if (u < 7) {

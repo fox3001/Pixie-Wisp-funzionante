@@ -24,7 +24,13 @@
   html, body { margin: 0; height: 100%; background: #000; overflow: hidden; overscroll-behavior: none; }
   body { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none;
          font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; color: var(--text); }
-  #cv { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; display: block; touch-action: none; }
+  /* la scena sta dentro la zona libera: lontana dalle barre di Safari, dalla X dello schermo intero e dalla barretta Home */
+  :root { --mt: 48px; --mb: 30px; --ms: 0px; }
+  #cv { position: fixed; display: block; touch-action: none;
+        left: calc(env(safe-area-inset-left) + var(--ms)); top: calc(env(safe-area-inset-top) + var(--mt));
+        width: calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right) - 2 * var(--ms));
+        height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - var(--mt) - var(--mb));
+        height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - var(--mt) - var(--mb)); }
 
   /* avvio: Safari vuole un tocco prima di far suonare qualcosa */
   #start { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: #000; z-index: 5; }
@@ -84,7 +90,7 @@
 
 <div id="menu" role="dialog" aria-label="Menu">
   <div class="top">
-    <h1>Pixie Wisp <span style="font-weight:400;font-size:13px">· versione 15/10 02:30</span></h1>
+    <h1>Pixie Wisp <span style="font-weight:400;font-size:13px">· versione 15/10 10:20</span></h1>
     <button class="primary" id="back">Torna al wisp</button>
   </div>
   <div class="grid">
@@ -123,6 +129,9 @@
         <label class="switch"><input type="checkbox" id="voice-on"><span></span></label>
       </div>
       <div class="row"><span class="label">Microfono</span><span class="status" id="st-mic">Spento</span></div>
+      <div class="row"><span class="label">Margine dai bordi<br><span class="hint">la creatura e i suoi effetti restano lontani da barre, X e barretta Home</span></span>
+        <div class="seg" id="mrg"><button data-v="0">No</button><button data-v="1">Piccolo</button><button data-v="2">Medio</button><button data-v="3">Grande</button></div>
+      </div>
       <div class="row">
         <span class="label">Copri l'angolo del pallino<br><span class="hint">la creatura non ci passa e l'angolo resta nero, per il nastro</span></span>
         <label class="switch"><input type="checkbox" id="zone-on"><span></span></label>
@@ -170,7 +179,8 @@
     // tasto -> { action, name }. 1, 2, 3 gia' assegnati: sono i tasti che manda l'app Pixie Remote
     keys: load('keys', {}),
     voice: load('voice', false),       // voce: spenta di base in Safari
-    zone: load('zone', { on: false, corner: 'tr' })
+    zone: load('zone', { on: false, corner: 'tr' }),
+    mrg: load('mrg', 2)
   };
 
   // tasti 1-7 gia' assegnati; "stop" si chiama ora "finite"
@@ -179,6 +189,16 @@
     for (const a in KEYNUM) { const code = 'Digit' + KEYNUM[a]; if (!cfg.keys[code]) cfg.keys[code] = { action: a, name: KEYNUM[a] }; }
     save('keys', cfg.keys); save('keysV', 2);
   }
+
+  // ---- margine dai bordi: [sopra, sotto, lati] in px
+  const MRG = [[0, 0, 0], [28, 18, 0], [48, 30, 0], [72, 44, 24]];
+  const applyMrg = () => {
+    const m = MRG[cfg.mrg] || MRG[2], r = document.documentElement.style;
+    r.setProperty('--mt', m[0] + 'px'); r.setProperty('--mb', m[1] + 'px'); r.setProperty('--ms', m[2] + 'px');
+    document.querySelectorAll('#mrg button').forEach((b) => b.classList.toggle('on', +b.dataset.v === cfg.mrg));
+  };
+  applyMrg();
+  document.querySelectorAll('#mrg button').forEach((b) => { b.onclick = () => { cfg.mrg = +b.dataset.v; save('mrg', cfg.mrg); applyMrg(); }; });
 
   // ---- creatura
   Wisp.config({ grandezza: 5 / 3 });   // creatura piu' grande di 2/3

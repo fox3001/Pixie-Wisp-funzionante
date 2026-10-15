@@ -780,7 +780,10 @@ class Component extends DCLogic {
           C.turnT = 0.75; C.pitchT = 0.05;
           if (!S.tgt) {
             // sempre lo stesso punto: lato destro, davanti, a meta' altezza
-            const tz = 60, rg = rangeAt(tz, true);
+            // abbastanza in profondita' da stare davvero sul lato destro anche se la creatura e' grande o lo schermo stretto
+            // (centro ad almeno il 70% della larghezza dello schermo)
+            const MCv = R * BODY * 1.05, sReq = 0.3 * LW / MCv;
+            const tz = clamp(FOC / Math.min(1, sReq) - FOC, 60, DEPTH * 0.6), rg = rangeAt(tz, true);
             S.tgt = { x: rg.x1, y: clamp(VY + 10, rg.y0, rg.y1), z: tz };
           }
           const dx = S.tgt.x - C.x, dy = S.tgt.y - C.y, d = Math.max(1, Math.hypot(dx, dy));

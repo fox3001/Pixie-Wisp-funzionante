@@ -165,7 +165,7 @@ class Component extends DCLogic {
     // grandezza: 1 = come nel mockup (era 58: +1/4, +1/4, +1/3); l'app la puo' cambiare (es. 5/3 = +2/3)
     const LW = 760, LH = 440, R = 120.8 * ((self.props && +self.props.grandezza) || 1);
     // profondita' della scatola = lato corto della scena; prospettiva verso il centro
-    const DEPTH = LH * 1.5, FOC = 650, VX = LW / 2, VY = LH / 2;
+    const DEPTH = LH * 1.7, FOC = 650, VX = LW / 2, VY = LH / 2;
     const scaleAt = (z) => FOC / (FOC + z);
     // margine della testa: raggio dello strato esterno piu' la pulsazione
     // corpo centrale un pochettino piu' grande (solo gli strati, non l'alone di fondo)
@@ -368,11 +368,11 @@ class Component extends DCLogic {
     };
     const enterFx = (kind) => {
       if (kind === 'gelatina') { S.purpT = 1; S.gflash = 1; self._play('zap'); }
-      Object.assign(S, { zg: null, cut: 0, mode: kind, t: 0, sayIn: 0.4, bx: C.x, by: C.y, bz: C.z, f1: 0, f2: 0, f3: 0, f4: 0, runT: 0, squint: 0, blinkT: 0, smile: false, tsx: 1, tsy: 1, tgt: null, stir: 0, ang: 0 });
+      Object.assign(S, { zg: null, gfloor: null, gfade: 1, cut: 0, mode: kind, t: 0, sayIn: 0.4, bx: C.x, by: C.y, bz: C.z, f1: 0, f2: 0, f3: 0, f4: 0, runT: 0, squint: 0, blinkT: 0, smile: false, tsx: 1, tsy: 1, tgt: null, stir: 0, ang: 0 });
       C.shx = 0; C.shy = 0; Bh.kind = 'face'; Bh.t = 0;
     };
     const endFx = () => {
-      Object.assign(S, { mode: 'normal', t: 0, browT: 0, eyeBigT: 1, squint: 0, melt: 0, mv: 0, eyeDy: 0, spx: 1, spy: 1, vsx: 0, vsy: 0, fire: 0, purpT: 0 });
+      Object.assign(S, { gfade: 1, gfloor: null, mode: 'normal', t: 0, browT: 0, eyeBigT: 1, squint: 0, melt: 0, mv: 0, eyeDy: 0, spx: 1, spy: 1, vsx: 0, vsy: 0, fire: 0, purpT: 0 });
       C.shx = 0; C.shy = 0; C.pitchT = 0; C.turnT = 0; drips = [];
       calmAfter();
     };
@@ -604,7 +604,8 @@ class Component extends DCLogic {
         const t = S.t;
         S.sayIn -= dt;
         if (t < 1.4) {
-          brake(dt, 0.04); toZ(dt, S.bz); box();
+          // si accorge del fuoco e intanto arretra un po'
+          brake(dt, 0.04); toZ(dt, Math.max(S.bz, DEPTH * 0.4)); box();
           C.pitchT = -1.35 * smoothst(0.2, 0.8, t); C.turnT = 0.12 * Math.sin(t * 4);
           S.eyeBigT = 1.2; S.browT = -0.6 * smoothst(0.5, 1.1, t);
           S.fire = 0.1 + 0.3 * smoothst(0.5, 1.4, t);
@@ -616,14 +617,17 @@ class Component extends DCLogic {
           S.browT = -1; S.eyeBigT = 1.15;
           S.runT -= dt;
           if (S.runT <= 0 || Math.hypot(C.tx - C.x, C.ty - C.y) < 40) {
-            C.tz = C.z < DEPTH / 2 ? rnd(DEPTH * 0.88, DEPTH) : rnd(0, DEPTH * 0.08);   // sempre da un estremo all'altro della profondita'
+            // nel panico: sempre un po' indietro, avanti e indietro in profondita' e da una parte all'altra
+            S.side = -(S.side || (Math.random() < 0.5 ? 1 : -1));
+            C.tz = C.z < DEPTH * 0.7 ? rnd(DEPTH * 0.78, DEPTH) : rnd(DEPTH * 0.3, DEPTH * 0.5);
             // niente urti: il punto d'arrivo sta ben dentro la scatola sia alla profondita' di partenza
             // sia a quella d'arrivo (la piu' vicina e' la piu' stretta), con margine verso il centro
             const rg = rangeAt(Math.min(C.z, C.tz), true);
             // spazio in alto per le fiamme sulla testa: il fuoco non deve arrivare al bordo
             const fy0 = Math.min(rg.y1, rg.y0 + R * 0.75);
-            C.tx = VX + (rnd(rg.x0, Math.max(rg.x0, rg.x1)) - VX) * 0.72; C.ty = VY + (rnd(fy0, Math.max(fy0, rg.y1)) - VY) * 0.65;
-            S.runT = rnd(0.55, 0.85);
+            const half = Math.max(0, (rg.x1 - rg.x0) / 2);
+            C.tx = VX + S.side * half * rnd(0.55, 0.95); C.ty = rnd(fy0, Math.max(fy0, rg.y1));
+            S.runT = rnd(0.45, 0.75);
           }
           const dx = C.tx - C.x, dy = C.ty - C.y, d = Math.max(1, Math.hypot(dx, dy)), ac = 3000 * Math.min(1, d / 120);
           C.vx += dx / d * ac * dt; C.vy += dy / d * ac * dt;
@@ -635,7 +639,8 @@ class Component extends DCLogic {
           if (C.y < rc.y0 + mg + R * 0.6) C.vy += (rc.y0 + mg + R * 0.6 - C.y) * 40 * dt; else if (C.y > rc.y1 - mg) C.vy -= (C.y - rc.y1 + mg) * 40 * dt;
           C.x = clamp(C.x, rc.x0, Math.max(rc.x0, rc.x1)); C.y = clamp(C.y, rc.y0, Math.max(rc.y0, rc.y1));
           C.z = clamp(C.z, 0, DEPTH);
-          C.turnT = clamp(C.vx / 260, -1, 1); C.pitchT = clamp(C.vy / 300, -0.8, 0.8) - 0.25;
+          // si gira di continuo di qua e di la', nel panico
+          C.turnT = clamp(C.vx / 220 + Math.sin(time * 7.3) * 0.45, -1, 1); C.pitchT = clamp(C.vy / 300, -0.8, 0.8) - 0.25 + Math.sin(time * 5.1) * 0.15;
           if (S.sayIn <= 0) { say('worry'); S.sayIn = rnd(0.45, 0.8); }
         } else if (t < 8.3) {
           // il fuoco si spegne in uno sbuffo di fumo
@@ -662,7 +667,9 @@ class Component extends DCLogic {
         } else endFx();
       } else if (S.mode === 'gelatina') {
         // GELATINA: si scioglie imbarazzato fino a restare solo gli occhi, poi si ricompone a molla
-        const t = S.t, floorY = VY + VY / scaleAt(C.z) - 6 - IN * 2.2;
+        // si scioglie li' dove sta: la pozza e' appena sotto di lui, non sul fondo
+        if (S.gfloor == null) S.gfloor = S.by + R * 0.95;
+        const t = S.t, floorY = S.gfloor;
         S.sayIn -= dt;
         C.vx = 0; C.vy = 0;
         if (t < 0.7) {
@@ -686,17 +693,24 @@ class Component extends DCLogic {
             drips.push({ bubble: 1, x: C.x + rnd(-1.1, 1.1) * R, y: floorY - 4, vy: -rnd(30, 60), r: R * rnd(0.05, 0.09), age: 0, life: rnd(0.35, 0.6) });
             if (Math.random() < 0.6) self._play('blub');
           }
-        } else if (t < 10) {
-          // si ricompone: uno zampillo che rimbalza a molla e lo rimette in forma (non e' un video al contrario)
-          if (!S.f2) { S.f2 = 1; S.mv = -2.6; self._play('plop'); }
-          S.mv += (-S.melt * 170 - S.mv * 6.5) * dt; S.melt += S.mv * dt;
-          S.melt = Math.max(-0.45, S.melt);
-          C.pitchT = 0; C.turnT = 0; S.eyeBigT = t < 8.2 ? 1.2 : 1;
-          if (S.cut) { C.shx = 0; S.squint = 0; S.browT = -0.2; if (t > 9.0) { S.cut = 0; S.melt = 0; endFx(); } }
+        } else if (t < 8.6) {
+          // si dissolve del tutto: pozza, gocce e occhi svaniscono
+          S.gfade = 1 - smoothst(7.5, 8.5, t);
+          if (!S.f4) { S.f4 = 1; self._play('puff'); }
+        } else if (t < 8.8) {
+          // sparito: pronto a tornare
+          S.gfade = 0; S.melt = 1; drips = [];
+        } else if (t < 12.4) {
+          // ritorna in 2 secondi: riappare e si ricompone a molla (non e' un video al contrario)
+          if (!S.f2) { S.f2 = 1; S.mv = -1.6; self._play('plop'); }
+          S.gfade = smoothst(8.8, 10.8, t);
+          if (t > 9.4) { S.mv += (-S.melt * 170 - S.mv * 6.5) * dt; S.melt += S.mv * dt; S.melt = Math.max(-0.45, S.melt); }
+          C.pitchT = 0; C.turnT = 0; S.eyeBigT = t < 10.4 ? 1.2 : 1;
+          if (S.cut) { C.shx = 0; S.squint = 0; S.browT = -0.2; if (t > 10.9) { S.cut = 0; S.melt = 0; S.gfade = 1; endFx(); } }
           else {
-            if (t > 8.3 && t < 9.1) { C.shx = Math.sin(t * 40) * 9 * (9.1 - t) / 0.8; S.squint = 0.9; } else { C.shx = 0; S.squint = t > 9.1 ? 0.3 : 0; }
-            S.browT = t > 9.1 ? 0.9 : 0;
-            if (t > 9.2 && !S.f3) { S.f3 = 1; say('angry'); }
+            if (t > 10.9 && t < 11.7) { C.shx = Math.sin(t * 40) * 9 * (11.7 - t) / 0.8; S.squint = 0.9; } else { C.shx = 0; S.squint = t > 11.7 ? 0.3 : 0; }
+            S.browT = t > 11.7 ? 0.9 : 0;
+            if (t > 11.8 && !S.f3) { S.f3 = 1; say('angry'); }
           }
         } else endFx();
         if (S.mode === 'gelatina') {
@@ -910,7 +924,7 @@ class Component extends DCLogic {
 
       // mai troppo avanti: il corpo (e nell'incendio anche le fiamme sulla testa) resta dentro lo schermo
       if (bodyVisible() && S.mode !== 'accio') {
-        const zmin = zMinFor(S.mode === 'incendio' ? 1.9 : BODY * 1.1);
+        const zmin = zMinFor(S.mode === 'incendio' ? 1.45 : BODY * 1.1);
         if (C.tz < zmin) C.tz = zmin;
         if (C.z < zmin) { C.z += (zmin - C.z) * Math.min(1, dt * 5); if (C.vz < 0) C.vz = 0; }
       }
@@ -963,7 +977,7 @@ class Component extends DCLogic {
       }
       // gocce e bolle di gelatina
       {
-        const floorY = VY + VY / scaleAt(C.z) - 6 - IN * 2.2;
+        const floorY = S.mode === 'gelatina' && S.gfloor != null ? S.gfloor : VY + VY / scaleAt(C.z) - 6 - IN * 2.2;
         const mm = clamp(S.melt, 0, 1), msx = 1 + 0.9 * mm, msy = 1 - 0.8 * mm, yb = C.y + R * 0.9;
         const reform = S.mode !== 'gelatina' || S.t >= 7.5;
         let m = 0;
@@ -1325,7 +1339,7 @@ class Component extends DCLogic {
       } else { JL.sx = 1; JL.vx = 0; JL.sy = 1; JL.vy = 0; }
       ctx.globalCompositeOperation = 'lighter';
 
-      const A = S.alpha * (1 - 0.45 * (C.z / DEPTH)), tint = S.tint; // da lontano un po' piu' tenue
+      const A = S.alpha * (S.gfade == null ? 1 : S.gfade) * (1 - 0.45 * (C.z / DEPTH)), tint = S.tint; // da lontano un po' piu' tenue
       // tipo di corpo: strati (attuale) | plasma | scintille | candela
       const CORPO = (self.props && self.props.corpo) || 'scintille';
       if (bodyVisible() && A > 0.005 && spine.length) {
@@ -1420,7 +1434,7 @@ class Component extends DCLogic {
         }
         // pozza e gocce di ectoplasma (gelatina)
         if (S.mode === 'gelatina' || drips.length) {
-          const floorY = VY + VY / dS - 6 - IN * 2.2, m = clamp(mlt, 0, 1);
+          const floorY = S.mode === 'gelatina' && S.gfloor != null ? S.gfloor : VY + VY / dS - 6 - IN * 2.2, m = clamp(mlt, 0, 1);
           if (m > 0.02) {
             ctx.save(); ctx.translate(C.x, floorY); ctx.scale(1, 0.32); ctx.translate(-C.x, -floorY);
             blob(cO, C.x, floorY, R * (0.5 + 1.1 * m), 0.32 * m * A);

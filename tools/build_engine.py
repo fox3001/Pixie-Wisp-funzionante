@@ -30,8 +30,8 @@ rep("    const LW = 760, LH = 440, R = 120.8 * ((self.props && +self.props.grand
     const LH = 440, R = 120.8 * ((self.props && +self.props.grandezza) || 1);
     let LW = 760;
 """)
-rep("    const DEPTH = LH * 1.5, FOC = 650, VX = LW / 2, VY = LH / 2;\n",
-    "    const DEPTH = LH * 1.5, FOC = 650, VY = LH / 2;\n    let VX = LW / 2;\n")
+rep("    const DEPTH = LH * 1.7, FOC = 650, VX = LW / 2, VY = LH / 2;\n",
+    "    const DEPTH = LH * 1.7, FOC = 650, VY = LH / 2;\n    let VX = LW / 2;\n")
 rep("const C = { x: 380, y: 260, vx: 0, vy: 0, tx: 380, ty: 260,", "const C = { x: VX, y: 260, vx: 0, vy: 0, tx: VX, ty: 260,")
 rep("    const ptr = { active: false, touch: false, x: 380, y: 260 };\n",
 """    const ptr = { active: false, touch: false, x: VX, y: 260 };

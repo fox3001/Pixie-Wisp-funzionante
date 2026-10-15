@@ -734,7 +734,9 @@ class Component extends DCLogic {
           // si stacca: plop, rimbalzo gommoso e torna indietro nel box
           if (!S.f4) { S.f4 = 1; self._play('plop'); S.vsx = -6; S.vsy = -5; }
           S.tsx = 1; S.tsy = 1; spring(230, 5.5, dt);
-          C.z = Zg + (140 - Zg) * smoothst(2.7, 3.3, t);
+          // torna indietro abbastanza da diventare grande la meta' di quando era spiaccicato sul vetro
+          const zBack = Math.min(DEPTH * 0.98, FOC / (scaleAt(Zg) * 0.5) - FOC);   // (fino in fondo al box al massimo)
+          C.z = Zg + (zBack - Zg) * smoothst(2.7, 3.45, t);
           S.squint = 0; S.eyeBigT = 1.2; S.browT = 0;
         } else if (t < 4.5) {
           // si scrolla
